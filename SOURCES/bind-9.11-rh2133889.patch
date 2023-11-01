@@ -1,0 +1,26 @@
+From c8f5b31f0637315c1c45d0287f05fcad2250f40f Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Thu, 13 Oct 2022 15:35:46 +0200
+Subject: [PATCH] Add include to rwlocktype_t to dns/zt.h
+
+It got broken as part of bug #2101712 fix. Introduced new definition,
+which passes during bind build, but breaks bind-dyndb-ldap build.
+---
+ lib/dns/include/dns/zt.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/dns/include/dns/zt.h b/lib/dns/include/dns/zt.h
+index 9421225..64c24d6 100644
+--- a/lib/dns/include/dns/zt.h
++++ b/lib/dns/include/dns/zt.h
+@@ -18,6 +18,7 @@
+ #include <stdbool.h>
+ 
+ #include <isc/lang.h>
++#include <isc/rwlock.h>
+ 
+ #include <dns/types.h>
+ 
+-- 
+2.37.3
+
