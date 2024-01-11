@@ -1,0 +1,58 @@
+From 6d6acf236841da5c2511f8afcd3e4a89af4c5658 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Witold=20Kr=C4=99cicki?= <wpk@isc.org>
+Date: Fri, 14 Feb 2020 09:18:48 +0100
+Subject: [PATCH] Use RESOLVER_NTASKS_PERCPU - 32 for regular tuning, 8 for
+ small
+
+Modify original upstream commit 0d80266f7e3, add high limit of used
+tasks. Minimum would be lower on machines with few cpus, but maximum
+would stay unchanged. Should prevent negatives of this change.
+
+Signed-off-by: Petr Mensik <pemensik@redhat.com>
+---
+ bin/named/server.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/bin/named/server.c b/bin/named/server.c
+index 39b1124..94b4daa 100644
+--- a/bin/named/server.c
++++ b/bin/named/server.c
+@@ -148,11 +148,13 @@
+ #endif
+ 
+ #ifdef TUNE_LARGE
+-#define RESOLVER_NTASKS 523
++#define RESOLVER_NTASKS_MAX 523
++#define RESOLVER_NTASKS_PERCPU 32
+ #define UDPBUFFERS 32768
+ #define EXCLBUFFERS 32768
+ #else
+-#define RESOLVER_NTASKS 31
++#define RESOLVER_NTASKS_MAX 31
++#define RESOLVER_NTASKS_PERCPU 8
+ #define UDPBUFFERS 1000
+ #define EXCLBUFFERS 4096
+ #endif /* TUNE_LARGE */
+@@ -3318,7 +3320,7 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 	ns_cache_t *nsc;
+ 	bool zero_no_soattl;
+ 	dns_acl_t *clients = NULL, *mapped = NULL, *excluded = NULL;
+-	unsigned int query_timeout, ndisp;
++	unsigned int query_timeout, ndisp, ntasks;
+ 	bool old_rpz_ok = false;
+ 	isc_dscp_t dscp4 = -1, dscp6 = -1;
+ 	dns_dyndbctx_t *dctx = NULL;
+@@ -3926,7 +3928,9 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 	dns_view_setresquerystats(view, resquerystats);
+ 
+ 	ndisp = 4 * ISC_MIN(ns_g_udpdisp, MAX_UDP_DISPATCH);
+-	CHECK(dns_view_createresolver(view, ns_g_taskmgr, RESOLVER_NTASKS,
++	ntasks = ISC_MIN(RESOLVER_NTASKS_PERCPU * ns_g_cpus,
++		         RESOLVER_NTASKS_MAX);
++	CHECK(dns_view_createresolver(view, ns_g_taskmgr, ntasks,
+ 				      ndisp, ns_g_socketmgr, ns_g_timermgr,
+ 				      resopts, ns_g_dispatchmgr,
+ 				      dispatch4, dispatch6));
+-- 
+2.34.1
+

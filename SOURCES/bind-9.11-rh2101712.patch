@@ -1,0 +1,232 @@
+From fff2960981a3294ac641968a17558c8d7eecf74d Mon Sep 17 00:00:00 2001
+From: Mark Andrews <marka@isc.org>
+Date: Wed, 24 Aug 2022 12:21:50 +1000
+Subject: [PATCH] Have dns_zt_apply lock the zone table
+
+There where a number of places where the zone table should have
+been locked, but wasn't, when dns_zt_apply was called.
+
+Added a isc_rwlocktype_t type parameter to dns_zt_apply and adjusted
+all calls to using it.  Removed locks in callers.
+
+Modified upstream commit for v9_11
+---
+ bin/named/server.c       | 11 ++++++-----
+ bin/named/statschannel.c |  8 ++++----
+ lib/dns/include/dns/zt.h |  4 ++--
+ lib/dns/tests/zt_test.c  |  3 ++-
+ lib/dns/view.c           |  3 ++-
+ lib/dns/zt.c             | 34 +++++++++++++++++++---------------
+ 6 files changed, 35 insertions(+), 28 deletions(-)
+
+diff --git a/bin/named/server.c b/bin/named/server.c
+index 9826588e6d..0b4b309461 100644
+--- a/bin/named/server.c
++++ b/bin/named/server.c
+@@ -8723,8 +8723,8 @@ load_configuration(const char *filename, ns_server_t *server,
+ 		    strcmp(view->name, "_bind") != 0)
+ 		{
+ 			dns_view_setviewrevert(view);
+-			(void)dns_zt_apply(view->zonetable, false,
+-					   removed, view);
++			(void)dns_zt_apply(view->zonetable, isc_rwlocktype_read,
++					   false, removed, view);
+ 		}
+ 		dns_view_detach(&view);
+ 	}
+@@ -10090,8 +10090,8 @@ add_view_tolist(struct dumpcontext *dctx, dns_view_t *view) {
+ 	ISC_LIST_INIT(vle->zonelist);
+ 	ISC_LIST_APPEND(dctx->viewlist, vle, link);
+ 	if (dctx->dumpzones)
+-		result = dns_zt_apply(view->zonetable, true,
+-				      add_zone_tolist, dctx);
++		result = dns_zt_apply(view->zonetable, isc_rwlocktype_read,
++				      true, add_zone_tolist, dctx);
+ 	return (result);
+ }
+ 
+@@ -11367,7 +11367,8 @@ ns_server_sync(ns_server_t *server, isc_lex_t *lex, isc_buffer_t **text) {
+ 		for (view = ISC_LIST_HEAD(server->viewlist);
+ 		     view != NULL;
+ 		     view = ISC_LIST_NEXT(view, link)) {
+-			result = dns_zt_apply(view->zonetable, false,
++			result = dns_zt_apply(view->zonetable,
++					      isc_rwlocktype_none, false,
+ 					      synczone, &cleanup);
+ 			if (result != ISC_R_SUCCESS &&
+ 			    tresult == ISC_R_SUCCESS)
+diff --git a/bin/named/statschannel.c b/bin/named/statschannel.c
+index 12ab048469..9828df0f4e 100644
+--- a/bin/named/statschannel.c
++++ b/bin/named/statschannel.c
+@@ -1833,8 +1833,8 @@ generatexml(ns_server_t *server, uint32_t flags,
+ 		if ((flags & STATS_XML_ZONES) != 0) {
+ 			TRY0(xmlTextWriterStartElement(writer,
+ 						       ISC_XMLCHAR "zones"));
+-			result = dns_zt_apply(view->zonetable, true,
+-					      zone_xmlrender, writer);
++			result = dns_zt_apply(view->zonetable, isc_rwlocktype_read,
++					      true, zone_xmlrender, writer);
+ 			if (result != ISC_R_SUCCESS)
+ 				goto error;
+ 			TRY0(xmlTextWriterEndElement(writer)); /* /zones */
+@@ -2489,8 +2489,8 @@ generatejson(ns_server_t *server, size_t *msglen,
+ 			CHECKMEM(za);
+ 
+ 			if ((flags & STATS_JSON_ZONES) != 0) {
+-				result = dns_zt_apply(view->zonetable, true,
+-						      zone_jsonrender, za);
++				result = dns_zt_apply(view->zonetable, isc_rwlocktype_read,
++						      true, zone_jsonrender, za);
+ 				if (result != ISC_R_SUCCESS) {
+ 					goto error;
+ 				}
+diff --git a/lib/dns/include/dns/zt.h b/lib/dns/include/dns/zt.h
+index e658e5bb67..94212250da 100644
+--- a/lib/dns/include/dns/zt.h
++++ b/lib/dns/include/dns/zt.h
+@@ -177,11 +177,11 @@ dns_zt_freezezones(dns_zt_t *zt, bool freeze);
+  */
+ 
+ isc_result_t
+-dns_zt_apply(dns_zt_t *zt, bool stop,
++dns_zt_apply(dns_zt_t *zt, isc_rwlocktype_t lock, bool stop,
+ 	     isc_result_t (*action)(dns_zone_t *, void *), void *uap);
+ 
+ isc_result_t
+-dns_zt_apply2(dns_zt_t *zt, bool stop, isc_result_t *sub,
++dns_zt_apply2(dns_zt_t *zt, isc_rwlocktype_t lock, bool stop, isc_result_t *sub,
+ 	      isc_result_t (*action)(dns_zone_t *, void *), void *uap);
+ /*%<
+  * Apply a given 'action' to all zone zones in the table.
+diff --git a/lib/dns/tests/zt_test.c b/lib/dns/tests/zt_test.c
+index 3f1e812d60..ee75303a50 100644
+--- a/lib/dns/tests/zt_test.c
++++ b/lib/dns/tests/zt_test.c
+@@ -145,7 +145,8 @@ apply(void **state) {
+ 	assert_non_null(view->zonetable);
+ 
+ 	assert_int_equal(nzones, 0);
+-	result = dns_zt_apply(view->zonetable, false, count_zone, &nzones);
++	result = dns_zt_apply2(view->zonetable, isc_rwlocktype_read, false, NULL,
++			      count_zone, &nzones);
+ 	assert_int_equal(result, ISC_R_SUCCESS);
+ 	assert_int_equal(nzones, 1);
+ 
+diff --git a/lib/dns/view.c b/lib/dns/view.c
+index f01b4dea0f..bd1ced2863 100644
+--- a/lib/dns/view.c
++++ b/lib/dns/view.c
+@@ -676,7 +676,8 @@ dns_view_dialup(dns_view_t *view) {
+ 	REQUIRE(DNS_VIEW_VALID(view));
+ 	REQUIRE(view->zonetable != NULL);
+ 
+-	(void)dns_zt_apply(view->zonetable, false, dialup, NULL);
++	(void)dns_zt_apply2(view->zonetable, isc_rwlocktype_read, false, NULL,
++			   dialup, NULL);
+ }
+ 
+ void
+diff --git a/lib/dns/zt.c b/lib/dns/zt.c
+index 3f12e247e0..af65740325 100644
+--- a/lib/dns/zt.c
++++ b/lib/dns/zt.c
+@@ -202,7 +202,8 @@ flush(dns_zone_t *zone, void *uap) {
+ static void
+ zt_destroy(dns_zt_t *zt) {
+ 	if (zt->flush) {
+-		(void)dns_zt_apply(zt, false, flush, NULL);
++		(void)dns_zt_apply(zt, isc_rwlocktype_none,
++				   false, flush, NULL);
+ 	}
+ 	isc_refcount_destroy(&zt->references);
+ 	dns_rbt_destroy(&zt->table);
+@@ -249,9 +250,7 @@ dns_zt_load(dns_zt_t *zt, bool stop) {
+ 
+ 	REQUIRE(VALID_ZT(zt));
+ 
+-	RWLOCK(&zt->rwlock, isc_rwlocktype_read);
+-	result = dns_zt_apply(zt, stop, load, NULL);
+-	RWUNLOCK(&zt->rwlock, isc_rwlocktype_read);
++	result = dns_zt_apply2(zt, isc_rwlocktype_read, stop, NULL, load, NULL);
+ 	return (result);
+ }
+ 
+@@ -293,7 +292,7 @@ dns_zt_asyncload2(dns_zt_t *zt, dns_zt_allloaded_t alldone, void *arg,
+ 	 * Prevent loads_pending going to zero while kicking off the loads.
+ 	 */
+ 	zt->loads_pending++;
+-	result = dns_zt_apply2(zt, false, NULL, asyncload, &params);
++	result = dns_zt_apply2(zt, isc_rwlocktype_none, false, NULL, asyncload, &params);
+ 	pending = --zt->loads_pending;
+ 	if (pending != 0) {
+ 		zt->loaddone = alldone;
+@@ -342,9 +341,7 @@ dns_zt_loadnew(dns_zt_t *zt, bool stop) {
+ 
+ 	REQUIRE(VALID_ZT(zt));
+ 
+-	RWLOCK(&zt->rwlock, isc_rwlocktype_read);
+-	result = dns_zt_apply(zt, stop, loadnew, NULL);
+-	RWUNLOCK(&zt->rwlock, isc_rwlocktype_read);
++	result = dns_zt_apply(zt, isc_rwlocktype_read, stop, loadnew, NULL);
+ 	return (result);
+ }
+ 
+@@ -366,9 +363,7 @@ dns_zt_freezezones(dns_zt_t *zt, bool freeze) {
+ 
+ 	REQUIRE(VALID_ZT(zt));
+ 
+-	RWLOCK(&zt->rwlock, isc_rwlocktype_read);
+-	result = dns_zt_apply2(zt, false, &tresult, freezezones, &freeze);
+-	RWUNLOCK(&zt->rwlock, isc_rwlocktype_read);
++	result = dns_zt_apply2(zt, isc_rwlocktype_read, false, &tresult, freezezones, &freeze);
+ 	if (tresult == ISC_R_NOTFOUND)
+ 		tresult = ISC_R_SUCCESS;
+ 	return ((result == ISC_R_SUCCESS) ? tresult : result);
+@@ -490,14 +485,14 @@ dns_zt_setviewrevert(dns_zt_t *zt) {
+ }
+ 
+ isc_result_t
+-dns_zt_apply(dns_zt_t *zt, bool stop,
++dns_zt_apply(dns_zt_t *zt, isc_rwlocktype_t lock, bool stop,
+ 	     isc_result_t (*action)(dns_zone_t *, void *), void *uap)
+ {
+-	return (dns_zt_apply2(zt, stop, NULL, action, uap));
++	return (dns_zt_apply2(zt, lock, stop, NULL, action, uap));
+ }
+ 
+ isc_result_t
+-dns_zt_apply2(dns_zt_t *zt, bool stop, isc_result_t *sub,
++dns_zt_apply2(dns_zt_t *zt, isc_rwlocktype_t lock, bool stop, isc_result_t *sub,
+ 	      isc_result_t (*action)(dns_zone_t *, void *), void *uap)
+ {
+ 	dns_rbtnode_t *node;
+@@ -508,6 +503,10 @@ dns_zt_apply2(dns_zt_t *zt, bool stop, isc_result_t *sub,
+ 	REQUIRE(VALID_ZT(zt));
+ 	REQUIRE(action != NULL);
+ 
++	if (lock != isc_rwlocktype_none) {
++		RWLOCK(&zt->rwlock, lock);
++	}
++
+ 	dns_rbtnodechain_init(&chain, zt->mctx);
+ 	result = dns_rbtnodechain_first(&chain, zt->table, NULL, NULL);
+ 	if (result == ISC_R_NOTFOUND) {
+@@ -538,8 +537,13 @@ dns_zt_apply2(dns_zt_t *zt, bool stop, isc_result_t *sub,
+ 
+  cleanup:
+ 	dns_rbtnodechain_invalidate(&chain);
+-	if (sub != NULL)
++	if (sub != NULL) {
+ 		*sub = tresult;
++	}
++
++	if (lock != isc_rwlocktype_none) {
++		RWUNLOCK(&zt->rwlock, lock);
++	}
+ 
+ 	return (result);
+ }
+-- 
+2.37.2
+

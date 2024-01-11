@@ -1,0 +1,98 @@
+From facdbb0f2a266c6a3a1fa823afaa09cbd3fc38a5 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Thu, 26 Nov 2020 12:13:10 +0100
+Subject: [PATCH] Note specific Red Hat changes in manual page
+
+Change docbook template instead of generated manual page. Remove
+system-config-bind reference, package were discontinued.
+---
+ bin/named/named.docbook | 73 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+
+diff --git a/bin/named/named.docbook b/bin/named/named.docbook
+index 7e743a9..802bec3 100644
+--- a/bin/named/named.docbook
++++ b/bin/named/named.docbook
+@@ -516,6 +516,79 @@
+ 
+   </refsection>
+ 
++  <refsection><info><title>NOTES</title></info>
++    <refsection><info><title>Red Hat SELinux BIND Security Profile</title></info>
++
++    <para>
++    By default, Red Hat ships BIND with the most secure SELinux policy
++    that will not prevent normal BIND operation and will prevent exploitation
++    of all known BIND security vulnerabilities . See the selinux(8) man page
++    for information about SElinux.
++    </para>
++
++    <para>
++    It is not necessary to run named in a chroot environment if the Red Hat
++    SELinux policy for named is enabled. When enabled, this policy is far
++    more secure than a chroot environment. Users are recommended to enable
++    SELinux and remove the bind-chroot package.
++    </para>
++
++    <para>
++    With this extra security comes some restrictions:
++    </para>
++
++    <para>
++    By default, the SELinux policy allows named to write any master
++    zone database files. Only the root user may create files in the $ROOTDIR/var/named
++    zone database file directory (the options { "directory" } option), where
++    $ROOTDIR is set in /etc/sysconfig/named.
++    </para>
++
++    <para>
++    The "named" group must be granted read privelege to
++    these files in order for named to be enabled to read them.
++    </para>
++
++    <para>
++    Any file created in the zone database file directory is automatically assigned
++    the SELinux file context named_zone_t .
++    </para>
++
++    <para>
++    By default, SELinux prevents any role from modifying named_zone_t files; this
++    means that files in the zone database directory cannot be modified by dynamic
++    DNS (DDNS) updates or zone transfers.
++    </para>
++
++    <para>
++    The Red Hat BIND distribution and SELinux policy creates three directories where
++    named is allowed to create and modify files: /var/named/slaves, /var/named/dynamic
++    /var/named/data. By placing files you want named to modify, such as
++    slave or DDNS updateable zone files and database / statistics dump files in
++    these directories, named will work normally and no further operator action is
++    required. Files in these directories are automatically assigned the 'named_cache_t'
++    file context, which SELinux allows named to write.
++    </para>
++    </refsection>
++
++    <refsection><info><title>Red Hat BIND SDB support</title></info>
++
++    <para>
++    Red Hat ships named with compiled in Simplified Database Backend modules that ISC
++    provides in the "contrib/sdb" directory. Install bind-sdb package if you want use them.
++    </para>
++
++    <para>
++    The SDB modules for LDAP, PostGreSQL, DirDB and SQLite are compiled into <command>named-sdb</command>.
++    </para>
++
++    <para>
++    See the documentation for the various SDB modules in /usr/share/doc/bind-sdb-*/ .
++    </para>
++    </refsection>
++
++  </refsection>
++
+   <refsection><info><title>SEE ALSO</title></info>
+ 
+     <para><citetitle>RFC 1033</citetitle>,
+-- 
+2.26.2
+

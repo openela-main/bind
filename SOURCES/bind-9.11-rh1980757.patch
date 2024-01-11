@@ -1,0 +1,32 @@
+From a503519533eb375a5ce1f7566bfc153aac980d87 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Fri, 9 Jul 2021 20:52:21 +0200
+Subject: [PATCH] Use proper entropy to initialize tsig keyname
+
+Random names used on GSS backed nsupdate can conflict in specific
+situations. That might include starting a lot of machines from
+containers, where they took all similar time to start. PID and timestamp
+would be similar and therefore randomness is quite low. Use entropy to
+generate more random identifier and reduce chance of conflict.
+---
+ bin/nsupdate/nsupdate.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/bin/nsupdate/nsupdate.c b/bin/nsupdate/nsupdate.c
+index 458aa76..d9e5a2b 100644
+--- a/bin/nsupdate/nsupdate.c
++++ b/bin/nsupdate/nsupdate.c
+@@ -2941,7 +2941,9 @@ start_gssrequest(dns_name_t *master) {
+ 
+ 	keyname = dns_fixedname_initname(&fkname);
+ 
+-	isc_random_get(&val);
++	result = isc_entropy_getdata(entropy, &val, sizeof(val), NULL, 0);
++	if (result != ISC_R_SUCCESS)
++		isc_random_get(&val);
+ 	result = isc_string_printf(mykeystr, sizeof(mykeystr), "%u.sig-%s",
+ 				   val, namestr);
+ 	if (result != ISC_R_SUCCESS)
+-- 
+2.31.1
+
