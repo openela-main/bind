@@ -51,7 +51,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  11%{?dist}.2
+Release:  14%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -126,6 +126,12 @@ Patch186: bind-9.16-CVE-2022-3736.patch
 Patch187: bind-9.16-CVE-2022-3924.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/f1d9e9ee3859976f403914d20ad2a10855343702
 Patch188: bind-9.16-CVE-2023-2828.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/dd7dde5743715dc0dec2defbb92b1a8637977bf9
+Patch189: bind-9.16-CVE-2023-2911-1.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/0101e28f91fb36b6a16a0049d3b3e2b7846f23f0
+Patch190: bind-9.16-CVE-2023-2911-2.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/c003c5bc3c68f3e513654b6689e1f60280d14844
+Patch191: bind-9.16-CVE-2023-2911-3.patch
 Patch192: bind-9.16-CVE-2023-3341.patch
 
 %{?systemd_ordering}
@@ -443,6 +449,9 @@ in HTML and PDF format.
 %patch186 -p1 -b .CVE-2022-3736
 %patch187 -p1 -b .CVE-2022-3924
 %patch188 -p1 -b .CVE-2023-2828
+%patch189 -p1 -b .CVE-2023-2911-1
+%patch190 -p1 -b .CVE-2023-2911-2
+%patch191 -p1 -b .CVE-2023-2911-3
 %patch192 -p1 -b .CVE-2023-3341
 
 %if %{with PKCS11}
@@ -1167,10 +1176,13 @@ fi;
 %endif
 
 %changelog
-* Wed Sep 20 2023 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-11.2
+* Wed Sep 20 2023 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-14
 - Limit the amount of recursion possible in control channel (CVE-2023-3341)
 
-* Tue Jun 20 2023 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-11.1
+* Mon Jun 26 2023 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-13
+- Prevent possible endless loop when refreshing stale data (CVE-2023-2911)
+
+* Tue Jun 20 2023 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-12
 - Strengten cache cleaning to prevent overflowing configured limit
   (CVE-2023-2828)
 
