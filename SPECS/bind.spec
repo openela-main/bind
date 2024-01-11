@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  8%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.2
+Release:  11%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -167,8 +167,13 @@ Patch190: bind-9.11-rh2101712.patch
 Patch191: bind-9.11-CVE-2022-2795.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/7376
 Patch192: bind-9.11-rh2133889.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/82185f4f80d2fa39a4569f6740cb360ffff8f5c4
+Patch193: bind-9.16-CVE-2022-3094-1.patch
+Patch194: bind-9.16-CVE-2022-3094-2.patch
+Patch195: bind-9.16-CVE-2022-3094-3.patch
+Patch196: bind-9.16-CVE-2022-3094-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/f1d9e9ee3859976f403914d20ad2a10855343702
-Patch193: bind-9.11-CVE-2023-2828.patch
+Patch197: bind-9.11-CVE-2023-2828.patch
 Patch198: bind-9.16-CVE-2023-3341.patch
 
 # SDB patches
@@ -572,7 +577,11 @@ are used for building ISC DHCP.
 %patch190 -p1 -b .rh2101712
 %patch191 -p1 -b .CVE-2022-2795
 %patch192 -p1 -b .rh2133889
-%patch193 -p1 -b .CVE-2023-2828
+%patch193 -p1 -b .CVE-2022-3094
+%patch194 -p1 -b .CVE-2022-3094
+%patch195 -p1 -b .CVE-2022-3094
+%patch196 -p1 -b .CVE-2022-3094-test
+%patch197 -p1 -b .CVE-2023-2828
 %patch198 -p1 -b .CVE-2023-3341
 
 mkdir lib/dns/tests/testdata/dstrandom
@@ -1626,11 +1635,15 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
-* Tue Sep 19 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-8.2
+* Tue Sep 19 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-11
 - Prevent exahustion of memory from control channel (CVE-2023-3341)
 
-* Thu Jun 22 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-8.1
+* Thu Jun 22 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-10
 - Prevent the cache going over the configured limit (CVE-2023-2828)
+
+* Wed Feb 08 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-9
+- Prevent flooding with UPDATE requests (CVE-2022-3094)
+- include upstream test for that change
 
 * Thu Oct 13 2022 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-8
 - Correct regression preventing bind-dyndb-ldap build (#2133889)
