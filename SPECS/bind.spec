@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  13%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
+Release:  14%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -179,6 +179,14 @@ Patch198: bind-9.16-CVE-2023-3341.patch
 Patch199: bind-9.11-stale-cache.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/8924adca613ca9daea63786563cce6fdbd742c56
 Patch200: bind-9.16-update-b.root-servers.net.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8768
+Patch201: bind-9.11-CVE-2023-4408.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8769
+Patch202: bind-9.11-CVE-2023-50387.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8778
+Patch203: bind-9.11-CVE-2023-2828-fixup.patch
+# addition to patch 200
+Patch204: bind-9.11-CVE-2023-50387-fixup.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -589,6 +597,10 @@ are used for building ISC DHCP.
 %patch198 -p1 -b .CVE-2023-3341
 %patch199 -p1 -b .RHEL-11785
 %patch200 -p1 -b .b.root-servers.net
+%patch201 -p1 -b .CVE-2023-4408
+%patch202 -p1 -b .CVE-2023-50387+50868
+%patch203 -p1 -b .CVE-2023-2828-fixup
+%patch204 -p1 -b .CVE-2023-50387-fixup
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1641,6 +1653,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Mon Feb 26 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-14
+- Speed up parsing of DNS messages with many different names (CVE-2023-4408)
+- Prevent increased CPU consumption in DNSSEC validator (CVE-2023-50387 CVE-2023-50868)
+- Do not use header_prev in expire_lru_headers
+
 * Thu Dec 07 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-13
 - Update addresses of b.root-servers.net (RHEL-18449)
 
