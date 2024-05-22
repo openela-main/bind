@@ -1,0 +1,65 @@
+From 8a7bff93037432fcfe8532752e89f150ea3030a4 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Mon, 9 Oct 2023 19:00:12 +0200
+Subject: [PATCH] Do not keep stale records by default
+
+By default set max-stale-ttl to 0, unless stale-answer-enable yes. This
+were enabled by mistake when backporting fix for CVE-2023-2828. It
+causes increased cache usage on servers not wanting to serve stale
+records. Fix that by setting smart defaults based on stale answers
+enabled with possible manual tuning.
+---
+ bin/named/server.c | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/bin/named/server.c b/bin/named/server.c
+index 7af90d0..afdc4fa 100644
+--- a/bin/named/server.c
++++ b/bin/named/server.c
+@@ -3295,7 +3295,7 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 	size_t max_acache_size;
+ 	size_t max_adb_size;
+ 	uint32_t lame_ttl, fail_ttl;
+-	uint32_t max_stale_ttl;
++	uint32_t max_stale_ttl = 0;
+ 	dns_tsig_keyring_t *ring = NULL;
+ 	dns_view_t *pview = NULL;	/* Production view */
+ 	isc_mem_t *cmctx = NULL, *hmctx = NULL;
+@@ -3739,16 +3739,29 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 	if (view->maxncachettl > 7 * 24 * 3600)
+ 		view->maxncachettl = 7 * 24 * 3600;
+ 
+-	obj = NULL;
+-	result = ns_config_get(maps, "max-stale-ttl", &obj);
+-	INSIST(result == ISC_R_SUCCESS);
+-	max_stale_ttl = cfg_obj_asuint32(obj);
+-
+ 	obj = NULL;
+ 	result = ns_config_get(maps, "stale-answer-enable", &obj);
+ 	INSIST(result == ISC_R_SUCCESS);
+ 	view->staleanswersenable = cfg_obj_asboolean(obj);
+ 
++	// RHEL-11785 -- set the stale-ttl to non-zero value only if enabled
++	obj = NULL;
++	if (view->staleanswersenable) {
++		result = ns_config_get(maps, "max-stale-ttl", &obj);
++		INSIST(result == ISC_R_SUCCESS);
++		max_stale_ttl = cfg_obj_asuint32(obj);
++		/*
++		 * If 'stale-answer-enable' is false, max_stale_ttl is set
++		 * to 0, meaning keeping stale RRsets in cache is disabled.
++		 */
++	} else {
++		/* Do not use default value if stale is disabled,
++		 * but allow manual overriding, like 'stale-cache-enable' */
++		result = ns_config_get(optionmaps, "max-stale-ttl", &obj);
++		if (result == ISC_R_SUCCESS)
++			max_stale_ttl = cfg_obj_asuint32(obj);
++	}
++
+ 	result = dns_viewlist_find(&ns_g_server->viewlist, view->name,
+ 				   view->rdclass, &pview);
+ 	if (result == ISC_R_SUCCESS) {
+-- 
+2.41.0
+

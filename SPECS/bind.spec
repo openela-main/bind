@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  11%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.1
+Release:  13%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -175,14 +175,10 @@ Patch196: bind-9.16-CVE-2022-3094-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/f1d9e9ee3859976f403914d20ad2a10855343702
 Patch197: bind-9.11-CVE-2023-2828.patch
 Patch198: bind-9.16-CVE-2023-3341.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8768
-Patch199: bind-9.11-CVE-2023-4408.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8769
-Patch200: bind-9.11-CVE-2023-50387.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/8778
-Patch201: bind-9.11-CVE-2023-2828-fixup.patch
-# addition to patch 200
-Patch202: bind-9.11-CVE-2023-50387-fixup.patch
+# https://issues.redhat.com/browse/RHEL-11785, downstream
+Patch199: bind-9.11-stale-cache.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/8924adca613ca9daea63786563cce6fdbd742c56
+Patch200: bind-9.16-update-b.root-servers.net.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -591,10 +587,8 @@ are used for building ISC DHCP.
 %patch196 -p1 -b .CVE-2022-3094-test
 %patch197 -p1 -b .CVE-2023-2828
 %patch198 -p1 -b .CVE-2023-3341
-%patch199 -p1 -b .CVE-2023-4408
-%patch200 -p1 -b .CVE-2023-50387+50868
-%patch201 -p1 -b .CVE-2023-2828-fixup
-%patch202 -p1 -b .CVE-2023-50387-fixup
+%patch199 -p1 -b .RHEL-11785
+%patch200 -p1 -b .b.root-servers.net
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1647,10 +1641,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
-* Mon Feb 26 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-11.1
-- Speed up parsing of DNS messages with many different names (CVE-2023-4408)
-- Prevent increased CPU consumption in DNSSEC validator (CVE-2023-50387 CVE-2023-50868)
-- Do not use header_prev in expire_lru_headers
+* Thu Dec 07 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-13
+- Update addresses of b.root-servers.net (RHEL-18449)
+
+* Mon Oct 09 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-12
+- Disable caching of stale records by default (RHEL-11785)
 
 * Tue Sep 19 2023 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-11
 - Prevent exahustion of memory from control channel (CVE-2023-3341)
