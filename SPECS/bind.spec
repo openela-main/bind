@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  14%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -187,6 +187,16 @@ Patch202: bind-9.11-CVE-2023-50387.patch
 Patch203: bind-9.11-CVE-2023-2828-fixup.patch
 # addition to patch 200
 Patch204: bind-9.11-CVE-2023-50387-fixup.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/225f2861920b8f8d42a0ea6c34dd1faa93aa8726
+Patch205: bind-9.11-CVE-2024-1975.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/3e0a67e4bdb253dae3a03a45c1aa117239a3313d
+# https://gitlab.isc.org/isc-projects/bind9/commit/e4d7ce686bb38428eddc7e33b40057d68eca9a6e
+# https://gitlab.isc.org/isc-projects/bind9/commit/b9b5485b22c364fb88c27aa04bad4c8f616da3fa
+# https://gitlab.isc.org/isc-projects/bind9/commit/3f10d6eff035702796ba82cd28b9f7cf9836e743
+# https://gitlab.isc.org/isc-projects/bind9/commit/23a4652346fb2877d6246b1eebaa967969dbde16
+Patch206: bind-9.11-CVE-2024-1737.patch
+# RH downstream, allow changing by environment
+Patch208: bind-9.11-CVE-2024-1737-runtime-env.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -212,6 +222,12 @@ Obsoletes:      caching-nameserver < 31:9.4.1-7.fc8
 Provides:       caching-nameserver = 31:9.4.1-7.fc8
 Obsoletes:      dnssec-conf < 1.27-2
 Provides:       dnssec-conf = 1.27-2
+# Fixes of CVE-2023-50387 and CVE-2023-50868 caused ABI change
+# Enforce updated rebuild is accepted only
+Conflicts:      bind-dyndb-ldap < 11.6-5
+Conflicts:      dhcp-client < 12:4.3.6-50
+Conflicts:      dhcp-server < 12:4.3.6-50
+Conflicts:      dhcp-relay  < 12:4.3.6-50
 BuildRequires:  gcc, make
 BuildRequires:  openssl-devel, libtool, autoconf, pkgconfig, libcap-devel
 BuildRequires:  libidn2-devel, libxml2-devel
@@ -601,6 +617,9 @@ are used for building ISC DHCP.
 %patch202 -p1 -b .CVE-2023-50387+50868
 %patch203 -p1 -b .CVE-2023-2828-fixup
 %patch204 -p1 -b .CVE-2023-50387-fixup
+%patch205 -p1 -b .CVE-2024-1975
+%patch206 -p1 -b .CVE-2024-1737
+%patch208 -p1 -b .CVE-2024-1737-env
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1653,6 +1672,20 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Tue Aug 06 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.2
+- Rebuild after CI change
+
+* Thu Jul 18 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.1
+- Resolve CVE-2024-1975
+- Resolve CVE-2024-1737
+- Add ability to change runtime limits for max types and records per name
+
+* Mon Apr 15 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16
+- Ensure incompatible dhcp is not accepted
+
+* Fri Apr 12 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-15
+- Ensure incompatible bind-dyndb-ldap is not accepted
+
 * Mon Feb 26 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-14
 - Speed up parsing of DNS messages with many different names (CVE-2023-4408)
 - Prevent increased CPU consumption in DNSSEC validator (CVE-2023-50387 CVE-2023-50868)
