@@ -1,0 +1,34 @@
+From beeb4527b25c8d48842bbc78f100b716df118699 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Tue, 9 Jul 2024 16:06:02 +0200
+Subject: [PATCH] Increase even further hazard pointers after KeyTrap
+
+Extends even more change Downstream specific changes related to KeyTrap,
+which added safety guards into hazard pointers. Because it seems they
+are not still enough. Add fixed base to accomodate common threads like
+main app thread and ldap worker threads. Multiply one more, just to be
+sure. We do not want to hit maximal limit again.
+---
+ lib/isc/managers.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/lib/isc/managers.c b/lib/isc/managers.c
+index 3bdca99..fffff78 100644
+--- a/lib/isc/managers.c
++++ b/lib/isc/managers.c
+@@ -26,9 +26,10 @@ isc_managers_create(isc_mem_t *mctx, size_t workers, size_t quantum,
+ 	/*
+ 	 * We have ncpus network threads, ncpus old network threads - make
+ 	 * it 4x just to be on the safe side. One additional for slow netmgr
+-	 * thread.
++	 * thread. One extra to be safe. Add base for main application thread
++	 * or bind-dyndb-ldap worker threads.
+ 	 */
+-	isc_hp_init(5 * workers);
++	isc_hp_init(6 + 6 * workers);
+ 
+ 	REQUIRE(netmgrp != NULL && *netmgrp == NULL);
+ 	isc__netmgr_create(mctx, workers, &netmgr);
+-- 
+2.45.2
+

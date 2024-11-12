@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  18%{?dist}.6
+Release:  24%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -155,24 +155,25 @@ Patch202: bind-9.16-isc-mempool-attach.patch
 Patch203: bind-9.16-isc_hp-CVE-2023-50387.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/1237d73cd1120b146ee699bbae7b2fe837cf2f98
 Patch204: bind-9.16-CVE-2023-6516-test.patch
-Patch205: bind-9.16-CVE-2024-1975.patch
+Patch205: bind-9.16-isc_hp-additional.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/26c9da5f2857b72077c17e06ac79f068c63782cc
 # https://gitlab.isc.org/isc-projects/bind9/commit/c5ebda6deb0997dc520b26fa0639891459de5cb6
 # https://gitlab.isc.org/isc-projects/bind9/commit/d56d2a32b861e81c2aaaabd309c4c58b629ede32
 # https://gitlab.isc.org/isc-projects/bind9/commit/dfcadc2085c8844b5836aff2b5ea51fb60c34868
 # https://gitlab.isc.org/isc-projects/bind9/commit/fdabf4b9570a60688f9f7d1e88d885f7a3718bca
 # https://gitlab.isc.org/isc-projects/bind9/commit/8ef414a7f38a04cfc11df44adaedaf3126fa3878
-Patch206: bind-9.16-CVE-2024-1737.patch
+Patch206: bind-9.16-CVE-2024-1975.patch
+Patch207: bind-9.16-CVE-2024-1737.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/a61be8eef0ee0ca8fd8036ccb61c6f9b728158ce
-Patch207: bind-9.18-CVE-2024-4076.patch
+Patch208: bind-9.18-CVE-2024-4076.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/2f2f0a900b9baf5e6eba02a82e2fe9e967dc1760
-Patch209: bind-9.16-CVE-2024-1737-records.patch
-Patch210: bind-9.16-CVE-2024-1737-records-test.patch
+Patch210: bind-9.16-CVE-2024-1737-records.patch
+Patch211: bind-9.16-CVE-2024-1737-records-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/3f1826f2f78792e95f56da7af3a35c46b4d6d9af
-Patch211: bind-9.16-CVE-2024-1737-types.patch
-Patch212: bind-9.16-CVE-2024-1737-types-test.patch
+Patch212: bind-9.16-CVE-2024-1737-types.patch
+Patch213: bind-9.16-CVE-2024-1737-types-test.patch
 # backport issue fix
-Patch213: bind-9.16-CVE-2024-1737-records-test2.patch
+Patch214: bind-9.16-CVE-2024-1737-records-test2.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -186,6 +187,9 @@ Requires:       bind-libs%{?_isa} = %{epoch}:%{version}-%{release}
 Requires(post): ((policycoreutils-python-utils and libselinux-utils) if (selinux-policy-targeted or selinux-policy-mls))
 Requires(post): ((selinux-policy and selinux-policy-base) if (selinux-policy-targeted or selinux-policy-mls))
 Recommends:     bind-utils bind-dnssec-utils
+# Fixes of CVE-2023-50387 and CVE-2023-50868 caused ABI change
+# Enforce updated rebuild is accepted only
+Conflicts:      bind-dyndb-ldap < 11.9-9
 BuildRequires:  gcc, make
 BuildRequires:  openssl-devel, libtool, autoconf, pkgconfig, libcap-devel
 BuildRequires:  libidn2-devel, libxml2-devel
@@ -506,14 +510,15 @@ in HTML and PDF format.
 %patch202 -p1 -b .mempool-attach
 %patch203 -p1 -b .isc_hp-CVE-2023-50387
 %patch204 -p1 -b .CVE-2023-6516-test
-%patch205 -p1 -b .CVE-2024-1975
-%patch206 -p1 -b .CVE-2024-1737
-%patch207 -p1 -b .CVE-2024-4076
-%patch209 -p1 -b .CVE-2024-1737-records
-%patch210 -p1 -b .CVE-2024-1737-records-test
-%patch211 -p1 -b .CVE-2024-1737-types
-%patch212 -p1 -b .CVE-2024-1737-types-test
-%patch213 -p1 -b .CVE-2024-1737-records-test2
+%patch205 -p1 -b .RHEL-39131
+%patch206 -p1 -b .CVE-2024-1975
+%patch207 -p1 -b .CVE-2024-1737
+%patch208 -p1 -b .CVE-2024-4076
+%patch210 -p1 -b .CVE-2024-1737-records
+%patch211 -p1 -b .CVE-2024-1737-records-test
+%patch212 -p1 -b .CVE-2024-1737-types
+%patch213 -p1 -b .CVE-2024-1737-types-test
+%patch214 -p1 -b .CVE-2024-1737-records-test2
 
 %if %{with PKCS11}
 %patch135 -p1 -b .config-pkcs11
@@ -1242,21 +1247,26 @@ fi;
 %endif
 
 %changelog
-* Fri Aug 09 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-18.6
+* Fri Aug 09 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24
 - Minor fix of reclimit test backport (CVE-2024-1737)
 
-* Wed Aug 07 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-18.5
+* Wed Aug 07 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-23
 - Backport addition of max-records-per-type and max-records-per-type options
 
-* Thu Jul 18 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-18.2
+* Thu Jul 18 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-22
 - Resolve CVE-2024-1975
 - Resolve CVE-2024-1737
 - Resolve CVE-2024-4076
 - Add ability to change runtime limits for max types and records per name
 
-* Mon Mar 25 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-18.1
-- Rebuild with correct z-stream tag again
+* Tue Jul 09 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-21
+- Increase size of hazard pointer array (RHEL-39131)
 
+* Tue May 28 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-20
+- Ensure bind CVE fixes hits public Stream repository
+
+* Fri Apr 12 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-19
+- Ensure incompatible bind-dyndb-ldap is not accepted
 
 * Mon Mar 25 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-18
 - Prevent crashing at masterformat system test (CVE-2023-6516)
