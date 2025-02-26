@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.2
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.4
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -197,6 +197,9 @@ Patch205: bind-9.11-CVE-2024-1975.patch
 Patch206: bind-9.11-CVE-2024-1737.patch
 # RH downstream, allow changing by environment
 Patch208: bind-9.11-CVE-2024-1737-runtime-env.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
+Patch209: bind-9.18-CVE-2024-11187-pre-test.patch
+Patch210: bind-9.18-CVE-2024-11187.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -568,58 +571,60 @@ are used for building ISC DHCP.
 %setup -q -n %{name}-%{BINDVERSION}
 
 # Common patches
-%patch10 -p1 -b .PIE
-%patch16 -p1 -b .redhat_doc
+%patch -P 10 -p1 -b .PIE
+%patch -P 16 -p1 -b .redhat_doc
 %ifnarch alpha ia64
-%patch72 -p1 -b .64bit
+%patch -P 72 -p1 -b .64bit
 %endif
-%patch102 -p1 -b .rh452060
-%patch106 -p1 -b .rh490837
-%patch109 -p1 -b .rh478718
-%patch112 -p1 -b .rh645544
-%patch130 -p1 -b .libdb
-%patch131 -p1 -b .multlib-conflict
-%patch140 -p1 -b .rh1410433
-%patch145 -p1 -b .rh1205168
-%patch153 -p1 -b .export_suffix
-%patch154 -p1 -b .oot-man
-%patch155 -p1 -b .pk11-internal
-%patch156 -p1 -b .fips-code
-%patch157 -p1 -b .fips-tests
-%patch159 -p1 -b .host-idn-disable
-%patch164 -p1 -b .fips-includes
-%patch165 -p1 -b .rt31459
-%patch166 -p1 -b .rt46047
-%patch167 -p1 -b .rh1668682
-%patch168 -p1 -b .random_test-disable
-%patch174 -p1 -b .rh1737407
-%patch175 -p1 -b .json-c
-%patch177 -p1 -b .serve-stale
-%patch178 -p1 -b .time-monotonic
-%patch183 -p1 -b .rh1980757
-%patch184 -p1 -b .rh2030239
-%patch185 -p1 -b .CVE-2021-25220
-%patch186 -p1 -b .CVE-2021-25220-test
-%patch188 -p1 -b .CVE-2022-38177
-%patch189 -p1 -b .CVE-2022-38178
-%patch190 -p1 -b .rh2101712
-%patch191 -p1 -b .CVE-2022-2795
-%patch192 -p1 -b .rh2133889
-%patch193 -p1 -b .CVE-2022-3094
-%patch194 -p1 -b .CVE-2022-3094
-%patch195 -p1 -b .CVE-2022-3094
-%patch196 -p1 -b .CVE-2022-3094-test
-%patch197 -p1 -b .CVE-2023-2828
-%patch198 -p1 -b .CVE-2023-3341
-%patch199 -p1 -b .RHEL-11785
-%patch200 -p1 -b .b.root-servers.net
-%patch201 -p1 -b .CVE-2023-4408
-%patch202 -p1 -b .CVE-2023-50387+50868
-%patch203 -p1 -b .CVE-2023-2828-fixup
-%patch204 -p1 -b .CVE-2023-50387-fixup
-%patch205 -p1 -b .CVE-2024-1975
-%patch206 -p1 -b .CVE-2024-1737
-%patch208 -p1 -b .CVE-2024-1737-env
+%patch -P 102 -p1 -b .rh452060
+%patch -P 106 -p1 -b .rh490837
+%patch -P 109 -p1 -b .rh478718
+%patch -P 112 -p1 -b .rh645544
+%patch -P 130 -p1 -b .libdb
+%patch -P 131 -p1 -b .multlib-conflict
+%patch -P 140 -p1 -b .rh1410433
+%patch -P 145 -p1 -b .rh1205168
+%patch -P 153 -p1 -b .export_suffix
+%patch -P 154 -p1 -b .oot-man
+%patch -P 155 -p1 -b .pk11-internal
+%patch -P 156 -p1 -b .fips-code
+%patch -P 157 -p1 -b .fips-tests
+%patch -P 159 -p1 -b .host-idn-disable
+%patch -P 164 -p1 -b .fips-includes
+%patch -P 165 -p1 -b .rt31459
+%patch -P 166 -p1 -b .rt46047
+%patch -P 167 -p1 -b .rh1668682
+%patch -P 168 -p1 -b .random_test-disable
+%patch -P 174 -p1 -b .rh1737407
+%patch -P 175 -p1 -b .json-c
+%patch -P 177 -p1 -b .serve-stale
+%patch -P 178 -p1 -b .time-monotonic
+%patch -P 183 -p1 -b .rh1980757
+%patch -P 184 -p1 -b .rh2030239
+%patch -P 185 -p1 -b .CVE-2021-25220
+%patch -P 186 -p1 -b .CVE-2021-25220-test
+%patch -P 188 -p1 -b .CVE-2022-38177
+%patch -P 189 -p1 -b .CVE-2022-38178
+%patch -P 190 -p1 -b .rh2101712
+%patch -P 191 -p1 -b .CVE-2022-2795
+%patch -P 192 -p1 -b .rh2133889
+%patch -P 193 -p1 -b .CVE-2022-3094
+%patch -P 194 -p1 -b .CVE-2022-3094
+%patch -P 195 -p1 -b .CVE-2022-3094
+%patch -P 196 -p1 -b .CVE-2022-3094-test
+%patch -P 197 -p1 -b .CVE-2023-2828
+%patch -P 198 -p1 -b .CVE-2023-3341
+%patch -P 199 -p1 -b .RHEL-11785
+%patch -P 200 -p1 -b .b.root-servers.net
+%patch -P 201 -p1 -b .CVE-2023-4408
+%patch -P 202 -p1 -b .CVE-2023-50387+50868
+%patch -P 203 -p1 -b .CVE-2023-2828-fixup
+%patch -P 204 -p1 -b .CVE-2023-50387-fixup
+%patch -P 205 -p1 -b .CVE-2024-1975
+%patch -P 206 -p1 -b .CVE-2024-1737
+%patch -P 208 -p1 -b .CVE-2024-1737-env
+%patch -P 209 -p1 -b .CVE-2024-11187-pre-test
+%patch -P 210 -p1 -b .CVE-2024-11187
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -635,20 +640,20 @@ find bin lib/lwres/man -name '*.docbook' -exec \
       -i '{}' ';'
 
 %if %{with PKCS11}
-%patch150 -p1 -b .engine-pkcs11
+%patch -P 150 -p1 -b .engine-pkcs11
 cp -r bin/named{,-pkcs11}
 cp -r bin/dnssec{,-pkcs11}
 cp -r lib/isc{,-pkcs11}
 cp -r lib/dns{,-pkcs11}
-%patch136 -p1 -b .dist_pkcs11
-%patch149 -p1 -b .kyua-pkcs11
+%patch -P 136 -p1 -b .dist_pkcs11
+%patch -P 149 -p1 -b .kyua-pkcs11
 %endif
 
 %if %{with SDB}
-%patch101 -p1 -b .old-api
+%patch -P 101 -p1 -b .old-api
 mkdir bin/named-sdb
 cp -r bin/named/* bin/named-sdb
-%patch11 -p1 -b .sdbsrc
+%patch -P 11 -p1 -b .sdbsrc
 # SDB ldap
 cp -fp contrib/sdb/ldap/ldapdb.[ch] bin/named-sdb
 # SDB postgreSQL
@@ -667,14 +672,14 @@ cp -fp %{SOURCE7} bin/sdb_tools/Makefile.in
 cp -fp contrib/sdb/ldap/{zone2ldap.1,zone2ldap.c} bin/sdb_tools
 cp -fp contrib/sdb/pgsql/zonetodb.c bin/sdb_tools
 cp -fp contrib/sdb/sqlite/zone2sqlite.c bin/sdb_tools
-%patch12 -p1 -b .sdb
-%patch17 -p1 -b .fix_sdb_ldap
-%patch18 -p1 -b .fix_zone2ldap
-%patch137 -p1 -b .strlcat_fix
+%patch -P 12 -p1 -b .sdb
+%patch -P 17 -p1 -b .fix_sdb_ldap
+%patch -P 18 -p1 -b .fix_zone2ldap
+%patch -P 137 -p1 -b .strlcat_fix
 %endif
 
-%patch133 -p1 -b .rh640538
-%patch134 -p1 -b .rh669163
+%patch -P 133 -p1 -b .rh640538
+%patch -P 134 -p1 -b .rh669163
 
 # Sparc and s390 arches need to use -fPIE
 %ifarch sparcv9 sparc64 s390 s390x
@@ -1672,6 +1677,13 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Thu Feb 06 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.4
+- Change patches applying to use -P parameter
+
+* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.3
+- Limit additional section records CPU processing (CVE-2024-11187)
+- Correct ANY queries to not have additional data appended
+
 * Tue Aug 06 2024 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.2
 - Rebuild after CI change
 
