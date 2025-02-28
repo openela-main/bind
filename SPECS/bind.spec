@@ -6,6 +6,8 @@
 # bcond_without is built by default, unless --without X is passed
 # bcond_with is built only when --with X is passed to build
 %bcond_with    SYSTEMTEST
+# enable RSA1 during SYSTEMTEST
+%bcond_with    CRYPTO_POLICY_RSA1
 %bcond_without GSSTSIG
 # it is not possible to build the package without PKCS11 sub-package
 # due to extensive changes to Makefiles
@@ -54,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  24%{?dist}
+Release:  24%{?dist}.3
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -174,6 +176,9 @@ Patch212: bind-9.16-CVE-2024-1737-types.patch
 Patch213: bind-9.16-CVE-2024-1737-types-test.patch
 # backport issue fix
 Patch214: bind-9.16-CVE-2024-1737-records-test2.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
+Patch215: bind-9.18-CVE-2024-11187-pre-test.patch
+Patch216: bind-9.18-CVE-2024-11187.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -216,6 +221,7 @@ BuildRequires:  softhsm
 %if %{with SYSTEMTEST}
 # bin/tests/system dependencies
 BuildRequires:  perl(Net::DNS) perl(Net::DNS::Nameserver) perl(Time::HiRes) perl(Getopt::Long)
+BuildRequires:  perl(English)
 BuildRequires:  python-dns
 # manual configuration requires this tool
 BuildRequires:  iproute
@@ -465,69 +471,21 @@ in HTML and PDF format.
 # RHEL does not yet support this verification
 %{gpgverify} --keyring='%{SOURCE4}' --signature='%{SOURCE2}' --data='%{SOURCE0}'
 %endif
-%setup -q
+%autosetup -N
 
 # Common patches
-%patch10 -p1 -b .PIE
-%patch16 -p1 -b .redhat_doc
-%patch72 -p1 -b .64bit
-%patch106 -p1 -b .rh490837
-%patch112 -p1 -b .rh645544
-%patch130 -p1 -b .libdb
-%patch157 -p1 -b .fips-tests
-%patch164 -p1 -b .rh1666814
-%patch170 -p1 -b .featuretest-named
-%patch171 -p1 -b .test-variant
-%patch172 -p1 -b .CVE-2022-0396
-%patch173 -p1 -b .CVE-2021-25220
-%patch174 -p1 -b .CVE-2021-25220-test
-%patch175 -p1 -b .CVE-2022-3080
-%patch176 -p1 -b .CVE-2022-38177
-%patch177 -p1 -b .CVE-2022-38178
-%patch178 -p1 -b .CVE-2022-2795
-%patch179 -p1 -b .rh2101712
-%patch181 -p1 -b .rh2133889
-%patch182 -p1 -b .CVE-2022-3094
-%patch183 -p1 -b .CVE-2022-3094
-%patch184 -p1 -b .CVE-2022-3094
-%patch185 -p1 -b .CVE-2022-3094-test
-%patch186 -p1 -b .CVE-2022-3736
-%patch187 -p1 -b .CVE-2022-3924
-%patch188 -p1 -b .CVE-2023-2828
-%patch189 -p1 -b .CVE-2023-2911-1
-%patch190 -p1 -b .CVE-2023-2911-2
-%patch191 -p1 -b .CVE-2023-2911-3
-%patch192 -p1 -b .CVE-2023-3341
-%patch193 -p1 -b .b.root-servers.net
-%patch194 -p1 -b .CVE-2023-4408
-%patch195 -p1 -b .CVE-2023-5517
-%patch196 -p1 -b .CVE-2023-5679
-%patch197 -p1 -b .CVE-2023-6516
-%patch198 -p1 -b .CVE-2023-50387
-%patch199 -p1
-%patch200 -p1
-%patch201 -p1 -b .test-variant-def
-%patch202 -p1 -b .mempool-attach
-%patch203 -p1 -b .isc_hp-CVE-2023-50387
-%patch204 -p1 -b .CVE-2023-6516-test
-%patch205 -p1 -b .RHEL-39131
-%patch206 -p1 -b .CVE-2024-1975
-%patch207 -p1 -b .CVE-2024-1737
-%patch208 -p1 -b .CVE-2024-4076
-%patch210 -p1 -b .CVE-2024-1737-records
-%patch211 -p1 -b .CVE-2024-1737-records-test
-%patch212 -p1 -b .CVE-2024-1737-types
-%patch213 -p1 -b .CVE-2024-1737-types-test
-%patch214 -p1 -b .CVE-2024-1737-records-test2
+%autopatch -p1 -m 1 -M 134
+# PKCS11 patches 135 136 and 149 are applied later.
+%autopatch -p1 -m 150
 
 %if %{with PKCS11}
-%patch135 -p1 -b .config-pkcs11
+%autopatch -p1 135
 cp -r bin/named{,-pkcs11}
 cp -r bin/dnssec{,-pkcs11}
 cp -r lib/dns{,-pkcs11}
 cp -r lib/ns{,-pkcs11}
-%patch136 -p1 -b .dist_pkcs11
-%patch149 -p1 -b .kyua-pkcs11
+%autopatch -p1 136
+%autopatch -p1 149
 %endif
 
 # Sparc and s390 arches need to use -fPIE
@@ -538,6 +496,10 @@ done
 %endif
 
 sed -e 's|"$TOP/config.guess"|"$TOP_SRCDIR/config.guess"|' -i bin/tests/system/ifconfig.sh
+# allow running as root from mock or test machines
+sed -e 's, "enable-developer",& \&\& systemctl is-system-running \&>/dev/null \&\& ! [ -e /mnt/tests ],' \
+    -i bin/tests/system/run.sh
+
 :;
 
 
@@ -712,15 +674,29 @@ else
   sh bin/tests/system/ifconfig.sh up
   perl bin/tests/system/testsock.pl && CONFIGURED=build
 fi
+
 if [ -n "$CONFIGURED" ]
 then
   set -e
+  %if %{with CRYPTO_POLICY_RSA1}
+    # Override crypto-policy to allow RSASHA1 key operations
+    OPENSSL_CONF="$(mktemp openssl-XXXXXX.cnf)"
+    cat > "$OPENSSL_CONF" << 'EOF'
+.include = /etc/ssl/openssl.cnf
+[evp_properties]
+rh-allow-sha1-signatures = yes
+EOF
+    export OPENSSL_CONF
+  %endif
   pushd build/bin/tests
   chown -R ${USER} . # Can be unknown user
-  %make_build test 2>&1 | tee test.log
+  %make_build test
   e=$?
   popd
   [ "$CONFIGURED" = build ] && sh bin/tests/system/ifconfig.sh down
+  %if %{with CRYPTO_POLICY_RSA1}
+    export -b OPENSSL_CONF
+  %endif
   if [ "$e" -ne 0 ]; then
     echo "ERROR: this build of BIND failed 'make test'. Aborting."
     exit $e;
@@ -1247,6 +1223,16 @@ fi;
 %endif
 
 %changelog
+* Sat Feb 15 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.3
+- Fix test backport changes
+
+* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.2
+
+- Limit additional section records CPU processing (CVE-2024-11187)
+
+* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.1
+- Switch to autopatch changes applying
+
 * Fri Aug 09 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24
 - Minor fix of reclimit test backport (CVE-2024-1737)
 
