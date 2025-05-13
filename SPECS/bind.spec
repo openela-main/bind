@@ -56,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  24%{?dist}.3
+Release:  28%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -1223,15 +1223,17 @@ fi;
 %endif
 
 %changelog
-* Sat Feb 15 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.3
+* Sat Feb 15 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-28
 - Fix test backport changes
 
-* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.2
-
+* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-27
 - Limit additional section records CPU processing (CVE-2024-11187)
 
-* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24.1
+* Wed Feb 05 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-26
 - Switch to autopatch changes applying
+
+* Fri Sep 06 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-25
+- Bump version above RHEL 9.5
 
 * Fri Aug 09 2024 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-24
 - Minor fix of reclimit test backport (CVE-2024-1737)
