@@ -56,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  28%{?dist}
+Release:  29%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -179,6 +179,12 @@ Patch214: bind-9.16-CVE-2024-1737-records-test2.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
 Patch215: bind-9.18-CVE-2024-11187-pre-test.patch
 Patch216: bind-9.18-CVE-2024-11187.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/10562
+# https://gitlab.isc.org/isc-projects/bind9/-/issues/5357
+# downstream patch fixing bind-dyndb-ldap causing issue
+Patch217: bind-9.21-resume-qmin-cname.patch
+# downstream only, extra check for above change, RHEL-30407
+Patch218: bind-9.18-query-fname-relative.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -1223,6 +1229,10 @@ fi;
 %endif
 
 %changelog
+* Tue Jun 10 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.23-29
+- Prevent name.c:670 attributes assertion failed (RHEL-30407)
+- Add extra checks for relative names
+
 * Sat Feb 15 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-28
 - Fix test backport changes
 
