@@ -56,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  29%{?dist}
+Release:  31%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -185,6 +185,9 @@ Patch216: bind-9.18-CVE-2024-11187.patch
 Patch217: bind-9.21-resume-qmin-cname.patch
 # downstream only, extra check for above change, RHEL-30407
 Patch218: bind-9.18-query-fname-relative.patch
+Patch219: bind-9.18-partial-additional-records.patch
+# downstream only, RHEL-84006
+Patch220: bind-9.18-configurable-additional-records.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -1229,6 +1232,12 @@ fi;
 %endif
 
 %changelog
+* Wed Jul 09 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31
+- Add runtime tunable limit by environment NAMED_MAXADDITIONAL (RHEL-84006)
+
+* Fri Jun 20 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-30
+- Change additional NS to be served partially (RHEL-84006)
+
 * Tue Jun 10 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.23-29
 - Prevent name.c:670 attributes assertion failed (RHEL-30407)
 - Add extra checks for relative names
