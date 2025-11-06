@@ -1,0 +1,250 @@
+From e0238189d03dc0a6b6092180ba52e74a26816422 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Thu, 10 Jul 2025 17:31:35 +0200
+Subject: [PATCH] Minimalistic support for max-records-per-type option
+
+Just propagate the number to rbtdb in addition to environment. Make
+environment preferred of both used, because default configuration value
+would override already changed default.
+
+Allow also 0 value from the environment.
+---
+ bin/named/config.c              |  1 +
+ bin/named/named.conf.docbook    |  1 +
+ bin/named/server.c              |  9 +++++++++
+ doc/arm/Bv9ARM-book.xml         | 18 ++++++++++++++++++
+ lib/dns/db.c                    |  6 +++++-
+ lib/dns/include/dns/db.h        | 10 ++++++++++
+ lib/dns/include/dns/rdataslab.h |  6 ++++++
+ lib/dns/rbtdb.c                 | 18 +++++++++++++++++-
+ lib/dns/rbtdb.h                 | 10 ++++++++++
+ lib/dns/rbtdb64.h               |  3 +++
+ lib/isccfg/namedconf.c          |  1 +
+ 11 files changed, 81 insertions(+), 2 deletions(-)
+
+diff --git a/bin/named/config.c b/bin/named/config.c
+index e3731cf..27cf9ee 100644
+--- a/bin/named/config.c
++++ b/bin/named/config.c
+@@ -243,6 +243,7 @@ options {\n\
+ #	max-ixfr-log-size <obsolete>\n\
+ 	max-journal-size unlimited;\n\
+ 	max-records 0;\n\
++	max-records-per-type 100;\n\
+ 	max-refresh-time 2419200; /* 4 weeks */\n\
+ 	max-retry-time 1209600; /* 2 weeks */\n\
+ 	max-transfer-idle-in 60;\n\
+diff --git a/bin/named/named.conf.docbook b/bin/named/named.conf.docbook
+index 31fac33..d7934c7 100644
+--- a/bin/named/named.conf.docbook
++++ b/bin/named/named.conf.docbook
+@@ -338,6 +338,7 @@ options {
+ 	max-journal-size ( unlimited | <replaceable>sizeval</replaceable> );
+ 	max-ncache-ttl <replaceable>integer</replaceable>;
+ 	max-records <replaceable>integer</replaceable>;
++	max-records-per-type <replaceable>integer</replaceable>;
+ 	max-recursion-depth <replaceable>integer</replaceable>;
+ 	max-recursion-queries <replaceable>integer</replaceable>;
+ 	max-refresh-time <replaceable>integer</replaceable>;
+diff --git a/bin/named/server.c b/bin/named/server.c
+index afdc4fa..2e88df7 100644
+--- a/bin/named/server.c
++++ b/bin/named/server.c
+@@ -4606,6 +4606,15 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 					cfg_obj_asuint32(obj),
+ 					max_clients_per_query);
+ 
++	/*
++	 * This is used for the cache and also as a default value
++	 * for zone databases.
++	 */
++	obj = NULL;
++	result = ns_config_get(maps, "max-records-per-type", &obj);
++	INSIST(result == ISC_R_SUCCESS);
++	dns_db_setmaxrrperset(cfg_obj_asuint32(obj));
++
+ 	obj = NULL;
+ 	result = ns_config_get(maps, "max-recursion-depth", &obj);
+ 	INSIST(result == ISC_R_SUCCESS);
+diff --git a/doc/arm/Bv9ARM-book.xml b/doc/arm/Bv9ARM-book.xml
+index 563dced..25acad0 100644
+--- a/doc/arm/Bv9ARM-book.xml
++++ b/doc/arm/Bv9ARM-book.xml
+@@ -8318,6 +8318,24 @@ avoid-v6-udp-ports { 40000; range 50000 60000; };
+ 	      </listitem>
+ 	    </varlistentry>
+ 
++	    <varlistentry>
++	      <term><command>max-records-per-type</command></term>
++	      <listitem>
++		<para>
++		This sets the maximum number of resource records that can be stored
++		in an RRset in a database. Can be configured in <option>options</option>,
++		only.
++		</para>
++
++		<para>
++		   If set to a positive value, any attempt to cache or to add to a zone
++		   an RRset with more than the specified number of records will result in
++		   a failure.  If set to 0, there is no cap on RRset size.  The default is
++		   <literal>100</literal>.
++		</para>
++	      </listitem>
++	    </varlistentry>
++
+ 	    <varlistentry>
+ 	      <term><command>recursive-clients</command></term>
+ 	      <listitem>
+diff --git a/lib/dns/db.c b/lib/dns/db.c
+index c581646..9e7632a 100644
+--- a/lib/dns/db.c
++++ b/lib/dns/db.c
+@@ -1130,7 +1130,6 @@ dns_db_nodefullname(dns_db_t *db, dns_dbnode_t *node, dns_name_t *name) {
+ 		return (ISC_R_NOTIMPLEMENTED);
+ 	return ((db->methods->nodefullname)(db, node, name));
+ }
+-
+ isc_result_t
+ dns_db_setservestalettl(dns_db_t *db, dns_ttl_t ttl)
+ {
+@@ -1152,3 +1151,8 @@ dns_db_getservestalettl(dns_db_t *db, dns_ttl_t *ttl)
+ 		return ((db->methods->getservestalettl)(db, ttl));
+ 	return (ISC_R_NOTIMPLEMENTED);
+ }
++void
++dns_db_setmaxrrperset(uint32_t maxrrperset) {
++	dns_rbtdb_setmaxrrperset(maxrrperset);
++	dns_rbtdb64_setmaxrrperset(maxrrperset);
++}
+diff --git a/lib/dns/include/dns/db.h b/lib/dns/include/dns/db.h
+index 452770f..6357bfd 100644
+--- a/lib/dns/include/dns/db.h
++++ b/lib/dns/include/dns/db.h
+@@ -1718,6 +1718,16 @@ dns_db_getservestalettl(dns_db_t *db, dns_ttl_t *ttl);
+  * \li	#ISC_R_NOTIMPLEMENTED - Not supported by this DB implementation.
+  */
+ 
++void
++dns_db_setmaxrrperset(uint32_t maxrrperset);
++/*%<
++ *     Sets the maximum number of records per rrset permitted in a database.
++ *     0 implies unlimited.
++ *
++ * Returns:
++ *\li  void
++ */
++
+ ISC_LANG_ENDDECLS
+ 
+ #endif /* DNS_DB_H */
+diff --git a/lib/dns/include/dns/rdataslab.h b/lib/dns/include/dns/rdataslab.h
+index f38d539..40c40a8 100644
+--- a/lib/dns/include/dns/rdataslab.h
++++ b/lib/dns/include/dns/rdataslab.h
+@@ -173,6 +173,12 @@ dns_rdataslab_equalx(unsigned char *slab1, unsigned char *slab2,
+  *\li	true if the slabs are equal, #false otherwise.
+  */
+ 
++void
++dns_rdataslab_setmaxrrperset(uint32_t maxrrperset);
++/*%<
++ * Set global limit of max-records-per-type value.
++ */
++
+ ISC_LANG_ENDDECLS
+ 
+ #endif /* DNS_RDATASLAB_H */
+diff --git a/lib/dns/rbtdb.c b/lib/dns/rbtdb.c
+index 5263e7c..388ffdf 100644
+--- a/lib/dns/rbtdb.c
++++ b/lib/dns/rbtdb.c
+@@ -981,6 +981,7 @@ static bool match_header_version(rbtdb_file_header_t *header);
+ /* Pad to 32 bytes */
+ static char FILE_VERSION[32] = "\0";
+ 
++
+ /*%
+  * 'init_count' is used to initialize 'newheader->count' which inturn
+  * is used to determine where in the cycle rrset-order cyclic starts.
+@@ -6321,6 +6322,19 @@ update_recordsandbytes(bool add, rbtdb_version_t *rbtversion,
+ #endif /* DNS_RBTDB_MAX_RTYPES */
+ 
+ static uint32_t dns_g_rbtdb_max_rtypes = DNS_RBTDB_MAX_RTYPES;
++static bool     dns_g_rbtdb_max_rtypes_fromenv = false;
++void
++#ifdef DNS_RBTDB_VERSION64
++dns_rbtdb64_setmaxtypepername(uint32_t maxrrperset)
++#else
++dns_rbtdb_setmaxtypepername(uint32_t maxrrperset)
++#endif
++{
++	if (!dns_g_rbtdb_max_rtypes_fromenv) {
++		/* Make environment override configuration to avoid resetting to default value. */
++		dns_g_rbtdb_max_rtypes = maxrrperset;
++	}
++}
+ 
+ static void
+ init_max_rtypes(void) {
+@@ -6329,8 +6343,10 @@ init_max_rtypes(void) {
+ 	if (max) {
+ 		char *endp = NULL;
+ 		long l = strtol(max, &endp, 10);
+-		if (max != endp && endp && !*endp && l >= 0)
++		if (max != endp && endp && !*endp) {
+ 			dns_g_rbtdb_max_rtypes = l;
++			dns_g_rbtdb_max_rtypes_fromenv = true;
++		}
+ 	}
+ }
+ 
+diff --git a/lib/dns/rbtdb.h b/lib/dns/rbtdb.h
+index cd84b5b..4f2d890 100644
+--- a/lib/dns/rbtdb.h
++++ b/lib/dns/rbtdb.h
+@@ -45,6 +45,16 @@ dns_rbtdb_create(isc_mem_t *mctx, dns_name_t *base, dns_dbtype_t type,
+  * \li argc == 0 or argv[0] is a valid memory context.
+  */
+ 
++void
++dns_rbtdb_setmaxtypepername(uint32_t value);
++/*%<
++ *     Set the maximum permissible number of RR types per owner name.
++ *     0 implies unlimited.
++ *
++ * Returns:
++ *\li  void
++ */
++
+ ISC_LANG_ENDDECLS
+ 
+ #endif /* DNS_RBTDB_H */
+diff --git a/lib/dns/rbtdb64.h b/lib/dns/rbtdb64.h
+index 33b0115..77ae5b0 100644
+--- a/lib/dns/rbtdb64.h
++++ b/lib/dns/rbtdb64.h
+@@ -32,6 +32,9 @@ dns_rbtdb64_create(isc_mem_t *mctx, dns_name_t *base, dns_dbtype_t type,
+ 		   dns_rdataclass_t rdclass, unsigned int argc, char *argv[],
+ 		   void *driverarg, dns_db_t **dbp);
+ 
++void
++dns_rbtdb64_setmaxtypepername(uint32_t value);
++
+ ISC_LANG_ENDDECLS
+ 
+ #endif /* DNS_RBTDB64_H */
+diff --git a/lib/isccfg/namedconf.c b/lib/isccfg/namedconf.c
+index 667111c..fc46a64 100644
+--- a/lib/isccfg/namedconf.c
++++ b/lib/isccfg/namedconf.c
+@@ -1100,6 +1100,7 @@ options_clauses[] = {
+ 	{ "lock-file", &cfg_type_qstringornone, 0 },
+ 	{ "managed-keys-directory", &cfg_type_qstring, 0 },
+ 	{ "match-mapped-addresses", &cfg_type_boolean, 0 },
++	{ "max-records-per-type", &cfg_type_uint32, 0 },
+ 	{ "max-rsa-exponent-size", &cfg_type_uint32, 0 },
+ 	{ "memstatistics", &cfg_type_boolean, 0 },
+ 	{ "memstatistics-file", &cfg_type_qstring, 0 },
+-- 
+2.50.0
+

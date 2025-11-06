@@ -1,0 +1,196 @@
+From ba30ef9b8dbe3dacced19d80a8b27854a794b334 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ond=C5=99ej=20Sur=C3=BD?= <ondrej@isc.org>
+Date: Sat, 25 May 2024 11:46:56 +0200
+Subject: [PATCH] Minimalistic support for max-types-per-name option
+
+Just add support for parsing of value from options to environment
+settable number. Keep environment value preferred, overriding
+configuration file value if present. Should avoid overriding environment
+set value by just default config value.
+
+Allow also value 0 from environment.
+---
+ bin/named/config.c           |  1 +
+ bin/named/named.conf.docbook |  1 +
+ bin/named/server.c           |  9 +++++++++
+ doc/arm/Bv9ARM-book.xml      | 19 +++++++++++++++++++
+ lib/dns/db.c                 | 12 ++++++++++--
+ lib/dns/include/dns/db.h     |  9 +++++++++
+ lib/dns/rdataslab.c          | 14 +++++++++++++-
+ lib/isccfg/namedconf.c       |  1 +
+ 8 files changed, 63 insertions(+), 3 deletions(-)
+
+diff --git a/bin/named/config.c b/bin/named/config.c
+index 27cf9ee..c4d44ef 100644
+--- a/bin/named/config.c
++++ b/bin/named/config.c
+@@ -246,6 +246,7 @@ options {\n\
+ 	max-records-per-type 100;\n\
+ 	max-refresh-time 2419200; /* 4 weeks */\n\
+ 	max-retry-time 1209600; /* 2 weeks */\n\
++	max-types-per-name 100;\n\
+ 	max-transfer-idle-in 60;\n\
+ 	max-transfer-idle-out 60;\n\
+ 	max-transfer-time-in 120;\n\
+diff --git a/bin/named/named.conf.docbook b/bin/named/named.conf.docbook
+index d7934c7..a4b1d76 100644
+--- a/bin/named/named.conf.docbook
++++ b/bin/named/named.conf.docbook
+@@ -348,6 +348,7 @@ options {
+ 	max-transfer-idle-out <replaceable>integer</replaceable>;
+ 	max-transfer-time-in <replaceable>integer</replaceable>;
+ 	max-transfer-time-out <replaceable>integer</replaceable>;
++	max-types-per-name <replaceable>integer</replaceable>;
+ 	max-udp-size <replaceable>integer</replaceable>;
+ 	max-zone-ttl ( unlimited | <replaceable>ttlval</replaceable> );
+ 	memstatistics <replaceable>boolean</replaceable>;
+diff --git a/bin/named/server.c b/bin/named/server.c
+index 2e88df7..2086e41 100644
+--- a/bin/named/server.c
++++ b/bin/named/server.c
+@@ -4615,6 +4615,15 @@ configure_view(dns_view_t *view, dns_viewlist_t *viewlist,
+ 	INSIST(result == ISC_R_SUCCESS);
+ 	dns_db_setmaxrrperset(cfg_obj_asuint32(obj));
+ 
++	/*
++	 * This is used for the cache and also as a default value
++	 * for zone databases.
++	 */
++	obj = NULL;
++	result = ns_config_get(maps, "max-types-per-name", &obj);
++	INSIST(result == ISC_R_SUCCESS);
++	dns_db_setmaxtypepername(cfg_obj_asuint32(obj));
++
+ 	obj = NULL;
+ 	result = ns_config_get(maps, "max-recursion-depth", &obj);
+ 	INSIST(result == ISC_R_SUCCESS);
+diff --git a/doc/arm/Bv9ARM-book.xml b/doc/arm/Bv9ARM-book.xml
+index 25acad0..70fd769 100644
+--- a/doc/arm/Bv9ARM-book.xml
++++ b/doc/arm/Bv9ARM-book.xml
+@@ -8336,6 +8336,25 @@ avoid-v6-udp-ports { 40000; range 50000 60000; };
+ 	      </listitem>
+ 	    </varlistentry>
+ 
++	    <varlistentry>
++	      <term><command>max-types-per-name</command></term>
++	      <listitem>
++		<para>
++		   This sets the maximum number of resource record types that can be stored
++		   for a single owner name in a database. Can be configured in <option>options</option>
++		   only.
++		</para>
++
++		<para>
++		   If set to a positive value, any attempt to cache or to add to a zone an owner
++		   name with more than the specified number of resource record types will result
++		   in a failure.  If set to 0, there is no cap on RR types number.  The default is
++		   <literal>100</literal>.
++		</para>
++	      </listitem>
++	    </varlistentry>
++   
++
+ 	    <varlistentry>
+ 	      <term><command>recursive-clients</command></term>
+ 	      <listitem>
+diff --git a/lib/dns/db.c b/lib/dns/db.c
+index 9e7632a..b0f8960 100644
+--- a/lib/dns/db.c
++++ b/lib/dns/db.c
+@@ -35,6 +35,7 @@
+ #include <dns/master.h>
+ #include <dns/rdata.h>
+ #include <dns/rdataset.h>
++#include <dns/rdataslab.h>
+ #include <dns/rdatasetiter.h>
+ #include <dns/result.h>
+ 
+@@ -1151,8 +1152,15 @@ dns_db_getservestalettl(dns_db_t *db, dns_ttl_t *ttl)
+ 		return ((db->methods->getservestalettl)(db, ttl));
+ 	return (ISC_R_NOTIMPLEMENTED);
+ }
++
++/* Emulation of more complex changes later. */
+ void
+ dns_db_setmaxrrperset(uint32_t maxrrperset) {
+-	dns_rbtdb_setmaxrrperset(maxrrperset);
+-	dns_rbtdb64_setmaxrrperset(maxrrperset);
++	dns_rdataslab_setmaxrrperset(maxrrperset);
++}
++
++void
++dns_db_setmaxtypepername(uint32_t value) {
++	dns_rbtdb_setmaxtypepername(value);
++	dns_rbtdb64_setmaxtypepername(value);
+ }
+diff --git a/lib/dns/include/dns/db.h b/lib/dns/include/dns/db.h
+index 6357bfd..f6eae9b 100644
+--- a/lib/dns/include/dns/db.h
++++ b/lib/dns/include/dns/db.h
+@@ -1728,6 +1728,15 @@ dns_db_setmaxrrperset(uint32_t maxrrperset);
+  *\li  void
+  */
+ 
++void
++dns_db_setmaxtypepername(uint32_t value);
++/*%<
++ * Set the maximum permissible number of RR types per owner name.
++ *
++ * If 'value' is nonzero, then any subsequent attempt to add an rdataset with a
++ * RR type that would exceed the number of already stored RR types will return
++ * ISC_R_NOSPACE.
++ */
+ ISC_LANG_ENDDECLS
+ 
+ #endif /* DNS_DB_H */
+diff --git a/lib/dns/rdataslab.c b/lib/dns/rdataslab.c
+index 9566f79..8ea9ef4 100644
+--- a/lib/dns/rdataslab.c
++++ b/lib/dns/rdataslab.c
+@@ -121,8 +121,18 @@ fillin_offsets(unsigned char *offsetbase, unsigned int *offsettable,
+ #endif /* DNS_RDATASET_MAX_RECORDS */
+ 
+ static unsigned int dns_g_rdataset_max_records = DNS_RDATASET_MAX_RECORDS;
++static bool dns_g_rdataset_max_records_fromenv = false;
+ static isc_once_t once = ISC_ONCE_INIT;
+ 
++void
++dns_rdataslab_setmaxrrperset(uint32_t maxrrperset)
++{
++	if (!dns_g_rdataset_max_records_fromenv) {
++		/* Make environment override configuration to avoid resetting to default value. */
++		dns_g_rdataset_max_records = maxrrperset;
++	}
++}
++
+ static void
+ init_max_records(void) {
+ 	/* Red Hat change, allow setting different max value by environment. */
+@@ -130,8 +140,10 @@ init_max_records(void) {
+ 	if (max) {
+ 		char *endp = NULL;
+ 		long l = strtol(max, &endp, 10);
+-		if (max != endp && endp && !*endp && l > 0)
++		if (max != endp && endp && !*endp) {
+ 			dns_g_rdataset_max_records = l;
++			dns_g_rdataset_max_records_fromenv = true;
++		}
+ 	}
+ }
+ 
+diff --git a/lib/isccfg/namedconf.c b/lib/isccfg/namedconf.c
+index fc46a64..b80bb9c 100644
+--- a/lib/isccfg/namedconf.c
++++ b/lib/isccfg/namedconf.c
+@@ -1102,6 +1102,7 @@ options_clauses[] = {
+ 	{ "match-mapped-addresses", &cfg_type_boolean, 0 },
+ 	{ "max-records-per-type", &cfg_type_uint32, 0 },
+ 	{ "max-rsa-exponent-size", &cfg_type_uint32, 0 },
++	{ "max-types-per-name", &cfg_type_uint32, 0 },
+ 	{ "memstatistics", &cfg_type_boolean, 0 },
+ 	{ "memstatistics-file", &cfg_type_qstring, 0 },
+ 	{ "multiple-cnames", &cfg_type_boolean, CFG_CLAUSEFLAG_OBSOLETE },
+-- 
+2.50.0
+

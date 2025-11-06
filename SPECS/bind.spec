@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.4
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.6
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -200,6 +200,11 @@ Patch208: bind-9.11-CVE-2024-1737-runtime-env.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
 Patch209: bind-9.18-CVE-2024-11187-pre-test.patch
 Patch210: bind-9.18-CVE-2024-11187.patch
+# RH downstream, adds limits configurable from file
+Patch211: bind-9.11-d-max-records-per-type.patch
+Patch212: bind-9.11-d-max-types-per-name.patch
+Patch213: bind-9.11-d-max-records-checkconf.patch
+Patch214: bind-9.11-CVE-2025-40778.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -625,6 +630,10 @@ are used for building ISC DHCP.
 %patch -P 208 -p1 -b .CVE-2024-1737-env
 %patch -P 209 -p1 -b .CVE-2024-11187-pre-test
 %patch -P 210 -p1 -b .CVE-2024-11187
+%patch -P 211 -p1 -b .records-per-type
+%patch -P 212 -p1 -b .types-per-name
+%patch -P 213 -p1 -b .records-checkconf
+%patch -P 214 -p1 -b .CVE-2025-40778
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1677,6 +1686,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Thu Oct 30 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.6
+- Address various spoofing attacks (CVE-2025-40778)
+
+* Thu Jul 10 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.5
+- Add support for max-records-per-type and max-types-per-name options
+  (RHEL-61936)
+- Support reading of new options also in named-checkconf -z, v2
+
 * Thu Feb 06 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.4
 - Change patches applying to use -P parameter
 

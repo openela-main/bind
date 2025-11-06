@@ -1,0 +1,61 @@
+From 83f283c3aeae99570c9e4c20f10e92ba565fc4be Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
+Date: Tue, 7 Oct 2025 16:18:03 +0200
+Subject: [PATCH] Implement settings limits also in named-checkconf
+
+Read and parse max-records-per-type and max-types-per-name options in
+case -z parameter is passed.
+---
+ bin/check/named-checkconf.c | 27 +++++++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/bin/check/named-checkconf.c b/bin/check/named-checkconf.c
+index e5afd52..42ef76c 100644
+--- a/bin/check/named-checkconf.c
++++ b/bin/check/named-checkconf.c
+@@ -415,6 +415,24 @@ configure_zone(const char *vclass, const char *view,
+ 	return (result);
+ }
+ 
++/* Red Hat 9.11 specific extension. */
++static void
++configure_maxrecords(const cfg_obj_t *voptions)
++{
++	cfg_obj_t *obj;
++	isc_result_t result;
++
++	obj = NULL;
++	result = cfg_map_get(voptions, "max-records-per-type", &obj);
++	if (result == ISC_R_SUCCESS)
++		dns_db_setmaxrrperset(cfg_obj_asuint32(obj));
++
++	obj = NULL;
++	result = cfg_map_get(voptions, "max-types-per-name", &obj);
++	if (result == ISC_R_SUCCESS)
++		dns_db_setmaxtypepername(cfg_obj_asuint32(obj));
++}
++
+ /*% configure a view */
+ static isc_result_t
+ configure_view(const char *vclass, const char *view, const cfg_obj_t *config,
+@@ -431,10 +449,15 @@ configure_view(const char *vclass, const char *view, const cfg_obj_t *config,
+ 		voptions = cfg_tuple_get(vconfig, "options");
+ 
+ 	zonelist = NULL;
+-	if (voptions != NULL)
++	if (voptions != NULL) {
+ 		(void)cfg_map_get(voptions, "zone", &zonelist);
+-	else
++		configure_maxrecords(voptions);
++	} else {
+ 		(void)cfg_map_get(config, "zone", &zonelist);
++		tresult = cfg_map_get(config, "options", &voptions);
++		if (tresult == ISC_R_SUCCESS)
++			configure_maxrecords(voptions);
++	}
+ 
+ 	for (element = cfg_list_first(zonelist);
+ 	     element != NULL;
+-- 
+2.51.0
+
