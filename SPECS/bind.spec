@@ -56,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  31%{?dist}
+Release:  31%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -188,6 +188,12 @@ Patch218: bind-9.18-query-fname-relative.patch
 Patch219: bind-9.18-partial-additional-records.patch
 # downstream only, RHEL-84006
 Patch220: bind-9.18-configurable-additional-records.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/d9b5ef342916462bfd63391831d96afc80c12df3
+Patch224: bind-9.16-CVE-2025-40780.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/2f0f44d493c382a7f0a3adfe7c4976b18a3d480b
+# https://gitlab.isc.org/isc-projects/bind9/commit/50479358efdf432d690415131b74b5df158a9d69
+# https://gitlab.isc.org/isc-projects/bind9/commit/33a7db1fe964e55b76b4ac003ecc56cc67028bd9
+Patch225: bind-9.16-CVE-2025-40778.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -1232,6 +1238,13 @@ fi;
 %endif
 
 %changelog
+* Thu Oct 30 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31.2
+- Replace downstream fixes with upstream changes
+
+* Wed Oct 29 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31.1
+- Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
+- Address various spoofing attacks (CVE-2025-40778)
+
 * Wed Jul 09 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31
 - Add runtime tunable limit by environment NAMED_MAXADDITIONAL (RHEL-84006)
 
