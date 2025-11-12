@@ -56,7 +56,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  33%{?dist}
+Release:  34%{?dist}.1
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -191,6 +191,14 @@ Patch220: bind-9.18-configurable-additional-records.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/9723
 # downstream only
 Patch221: bind-9.18-dig-idn-input-always.patch
+# downstream only too
+Patch222: bind-9.18-dig-idn-input-always-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/d9b5ef342916462bfd63391831d96afc80c12df3
+Patch224: bind-9.16-CVE-2025-40780.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/2f0f44d493c382a7f0a3adfe7c4976b18a3d480b
+# https://gitlab.isc.org/isc-projects/bind9/commit/50479358efdf432d690415131b74b5df158a9d69
+# https://gitlab.isc.org/isc-projects/bind9/commit/33a7db1fe964e55b76b4ac003ecc56cc67028bd9
+Patch225: bind-9.16-CVE-2025-40778.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -1235,10 +1243,18 @@ fi;
 %endif
 
 %changelog
+* Wed Oct 29 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-34.1
+- Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
+- Replace downstream fixes with upstream changes
+- Address various spoofing attacks (CVE-2025-40778)
+
+* Tue Sep 16 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-34
+- Fix failures in idna system test (RHEL-66172)
+
 * Fri Sep 12 2025 Petr Menšík <<pemensik@redhat.com>> - 32:9.16.23-33
 - logrotate: skip if empty and remove old variants (RHEL-113942)
 
-* Wed Sep 03 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31
+* Wed Sep 03 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-32
 - Decode IDN names on input in all situations in utilities (RHEL-66172)
 
 * Wed Jul 09 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-31
