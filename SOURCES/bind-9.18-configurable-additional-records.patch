@@ -1,0 +1,169 @@
+From cb31d547cd2861230dd209ce2322d96e28369bcb Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Mon, 16 Jun 2025 19:36:13 +0200
+Subject: [PATCH] Support runtime configurable limit of additional records
+
+Use environment variable NAMED_MAXADDITIONAL to change default built-in
+limit. Uses environment variable to avoid the need to support the variable
+option in the more recent versions and after upgrades.
+
+Use debug 1 verbosity for logging parsed limit at the start, but not
+changing production logs.
+---
+ bin/named/main.c           |  5 +++++
+ bin/named/named.rst        |  9 +++++++++
+ lib/ns/include/ns/server.h | 13 +++++++++++++
+ lib/ns/query.c             |  5 +++--
+ lib/ns/server.c            | 25 +++++++++++++++++++++++++
+ 5 files changed, 55 insertions(+), 2 deletions(-)
+
+diff --git a/bin/named/main.c b/bin/named/main.c
+index c8ee00d..ea31c9f 100644
+--- a/bin/named/main.c
++++ b/bin/named/main.c
+@@ -1392,6 +1392,11 @@ setup(void) {
+ 	if (transferstuck) {
+ 		ns_server_setoption(sctx, NS_SERVER_TRANSFERSTUCK, true);
+ 	}
++	isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
++		      NAMED_LOGMODULE_SERVER, ISC_LOG_DEBUG(1),
++		      "using max %u additional records",
++		      ns_server_getmaxadditionalrecords(sctx));
++
+ }
+ 
+ static void
+diff --git a/bin/named/named.rst b/bin/named/named.rst
+index 34325cc..d3e3740 100644
+--- a/bin/named/named.rst
++++ b/bin/named/named.rst
+@@ -254,6 +254,15 @@ Files
+ |named_pid|
+    The default process-id file.
+ 
++Environment
++~~~~~~~~~~~
++
++NAMED_MAXADDITIONAL
++    Red Hat specific extension. Accepts numeric value of maximal NS
++    records, which would get fetched additional addresses. Default
++    value is 13. Allows runtime configurable limit introduced in
++    CVE-2024-11187 fixes.
++
+ Notes
+ ~~~~~
+ 
+diff --git a/lib/ns/include/ns/server.h b/lib/ns/include/ns/server.h
+index 6e4309b..963c189 100644
+--- a/lib/ns/include/ns/server.h
++++ b/lib/ns/include/ns/server.h
+@@ -128,6 +128,8 @@ struct ns_server {
+ 	isc_stats_t *tcpoutstats4;
+ 	isc_stats_t *tcpinstats6;
+ 	isc_stats_t *tcpoutstats6;
++
++	unsigned int max_additional_records;
+ };
+ 
+ struct ns_altsecret {
+@@ -172,6 +174,17 @@ ns_server_setserverid(ns_server_t *sctx, const char *serverid);
+  *\li	'sctx' is valid.
+  */
+ 
++unsigned int
++ns_server_getmaxadditionalrecords(ns_server_t *sctx);
++/*%<
++ *	Returns the maximal number of records with additional addresses
++ *	provided.
++ *
++ * Requires:
++ *\li	'sctx' is valid.
++ */
++
++
+ void
+ ns_server_setoption(ns_server_t *sctx, unsigned int option, bool value);
+ /*%<
+diff --git a/lib/ns/query.c b/lib/ns/query.c
+index 11d2520..f5447e5 100644
+--- a/lib/ns/query.c
++++ b/lib/ns/query.c
+@@ -2099,7 +2099,7 @@ addname:
+ 		if (client->additionaldepth++ < client->view->max_restarts) {
+ 			eresult = dns_rdataset_additionaldata(
+ 				trdataset, fname, query_additional_cb, qctx,
+-				DNS_RDATASET_MAXADDITIONAL);
++				client->sctx->max_additional_records);
+ 		}
+ 		client->additionaldepth--;
+ 	}
+@@ -2199,7 +2199,8 @@ regular:
+ 	 * We don't care if dns_rdataset_additionaldata() fails.
+ 	 */
+ 	(void)dns_rdataset_additionaldata(rdataset, name, query_additional_cb,
+-					  qctx, DNS_RDATASET_MAXADDITIONAL);
++					  qctx,
++					  client->sctx->max_additional_records);
+ 	CTRACE(ISC_LOG_DEBUG(3), "query_additional: done");
+ }
+ 
+diff --git a/lib/ns/server.c b/lib/ns/server.c
+index 5f1de47..add6f40 100644
+--- a/lib/ns/server.c
++++ b/lib/ns/server.c
+@@ -19,6 +19,7 @@
+ #include <isc/stats.h>
+ #include <isc/util.h>
+ 
++#include <dns/rdataset.h>
+ #include <dns/stats.h>
+ #include <dns/tkey.h>
+ 
+@@ -35,6 +36,22 @@
+ 		RUNTIME_CHECK(result == ISC_R_SUCCESS); \
+ 	} while (0)
+ 
++/*
++ * CVE-2024-11187 introduced a limit on maximal number of records,
++ * for which additional records would be fetched. Make this limit
++ * configurable runtime only by environment.
++ */
++static size_t
++initialize_maxadditional(void) {
++	const char *limits;
++
++	limits = getenv("NAMED_MAXADDITIONAL");
++	if (limits != NULL) {
++		return strtol(limits, NULL, 10);
++	}
++	return DNS_RDATASET_MAXADDITIONAL;
++}
++
+ isc_result_t
+ ns_server_create(isc_mem_t *mctx, ns_matchview_t matchingview,
+ 		 ns_server_t **sctxp) {
+@@ -99,6 +116,7 @@ ns_server_create(isc_mem_t *mctx, ns_matchview_t matchingview,
+ 
+ 	sctx->udpsize = 1232;
+ 	sctx->transfer_tcp_message_size = 20480;
++	sctx->max_additional_records = initialize_maxadditional();
+ 
+ 	sctx->fuzztype = isc_fuzz_none;
+ 	sctx->fuzznotify = NULL;
+@@ -235,6 +253,13 @@ ns_server_setserverid(ns_server_t *sctx, const char *serverid) {
+ 	return ISC_R_SUCCESS;
+ }
+ 
++unsigned int
++ns_server_getmaxadditionalrecords(ns_server_t *sctx) {
++	REQUIRE(SCTX_VALID(sctx));
++
++	return sctx->max_additional_records;
++}
++
+ void
+ ns_server_setoption(ns_server_t *sctx, unsigned int option, bool value) {
+ 	REQUIRE(SCTX_VALID(sctx));
+-- 
+2.50.1
+
