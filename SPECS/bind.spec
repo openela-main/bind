@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.6
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.7
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -205,6 +205,8 @@ Patch211: bind-9.11-d-max-records-per-type.patch
 Patch212: bind-9.11-d-max-types-per-name.patch
 Patch213: bind-9.11-d-max-records-checkconf.patch
 Patch214: bind-9.11-CVE-2025-40778.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/e5357c1623da3842227d2c76468b76bc983584d6
+Patch215: bind-9.11-CVE-2026-1519.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -634,6 +636,7 @@ are used for building ISC DHCP.
 %patch -P 212 -p1 -b .types-per-name
 %patch -P 213 -p1 -b .records-checkconf
 %patch -P 214 -p1 -b .CVE-2025-40778
+%patch -P 215 -p1 -b .CVE-2026-1519
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1686,6 +1689,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.7
+- Denial of Service via maliciously crafted DNSSEC-validated zone
+  (CVE-2026-1519)
+
 * Thu Oct 30 2025 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.6
 - Address various spoofing attacks (CVE-2025-40778)
 
