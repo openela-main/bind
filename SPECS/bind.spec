@@ -34,7 +34,7 @@
 %global        chroot_prefix     %{bind_dir}/chroot
 %global        chroot_create_directories /dev /run/named %{_localstatedir}/{log,named,tmp} \\\
                                          %{_sysconfdir}/{crypto-policies/back-ends,pki/dnssec-keys,named} \\\
-                                         %{_libdir}/bind %{_libdir}/named %{_datadir}/GeoIP /proc/sys/net/ipv4
+                                         %{_libdir}/bind %{_libdir}/named %{_datadir}/{GeoIP,named} /proc/sys/net/ipv4
 
 %global        selinuxbooleans   named_write_master_zones=1
 ## The order of libs is important. See lib/Makefile.in for details
@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  10%{?dist}.3
+Release:  15%{?dist}.1
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -111,6 +111,7 @@ Source46: named-setup-rndc.service
 Source48: setup-named-softhsm.sh
 Source49: named-chroot.files
 Source50: named.sysusers
+Source51: bind-chroot.tmpfiles.d
 
 # Common patches
 # FIXME: Is this still required?
@@ -644,23 +645,33 @@ touch ${RPM_BUILD_ROOT}%{_sysconfdir}/rndc.{key,conf}
 install -m 644 %{SOURCE27} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
 install -m 644 %{SOURCE36} ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named
+install -p -m 644 %{SOURCE17} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.ca
+ln -sr ${RPM_BUILD_ROOT}%{_sysconfdir}/named.ca \
+       ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.ca
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/named
+install -p -m 644 %{SOURCE18} ${RPM_BUILD_ROOT}%{_datadir}/named/named.localhost
+install -p -m 644 %{SOURCE19} ${RPM_BUILD_ROOT}%{_datadir}/named/named.loopback
+install -p -m 644 %{SOURCE20} ${RPM_BUILD_ROOT}%{_datadir}/named/named.empty
 
 # data files:
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/named
-install -m 640 %{SOURCE17} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.ca
-install -m 640 %{SOURCE18} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.localhost
-install -m 640 %{SOURCE19} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.loopback
-install -m 640 %{SOURCE20} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.empty
-install -m 640 %{SOURCE23} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.rfc1912.zones
+for FILE in named.{localhost,loopback,empty}
+do
+  ln -sr "${RPM_BUILD_ROOT}%{_datadir}/named/$FILE" \
+         "${RPM_BUILD_ROOT}%{_localstatedir}/named/$FILE"
+done
+install -p -m 640 %{SOURCE23} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.rfc1912.zones
 
 # sample bind configuration files for %%doc:
 mkdir -p sample/etc sample/var/named/{data,slaves}
 install -m 644 %{SOURCE25} sample/etc/named.conf
-# Copy default configuration to %%doc to make it usable from system-config-bind
+# Copy default configuration to %%doc
 install -m 644 %{SOURCE16} named.conf.default
 install -m 644 %{SOURCE23} sample/etc/named.rfc1912.zones
-install -m 644 %{SOURCE18} %{SOURCE19} %{SOURCE20}  sample/var/named
-install -m 644 %{SOURCE17} sample/var/named/named.ca
+ln -s %{_sysconfdir}/named.ca sample/var/named/named.ca
+for FILE in named.{localhost,loopback,empty}; do
+  ln -s %{_datadir}/named/$FILE sample/var/named/$FILE
+done
 for f in my.internal.zone.db slaves/my.slave.internal.zone.db slaves/my.ddns.internal.zone.db my.external.zone.db; do 
   echo '@ in soa localhost. root 1 3H 15M 1W 1D
   ns localhost.' > sample/var/named/$f; 
@@ -668,10 +679,11 @@ done
 :;
 
 mkdir -p ${RPM_BUILD_ROOT}%{_tmpfilesdir}
-install -m 644 %{SOURCE35} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/named.conf
+install -p -m 644 %{SOURCE35} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/named.conf
+install -p -m 644 %{SOURCE51} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/%{name}-chroot.conf
 
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d
-install -m 644 %{SOURCE43} ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d/named
+install -p -m 644 %{SOURCE43} ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d/named
 
 %pre
 if [ "$1" -eq 1 ]; then
@@ -773,6 +785,7 @@ fi;
 %dir %{_libdir}/named
 %config(noreplace) %verify(not md5 size mtime) %{_sysconfdir}/sysconfig/named
 %config(noreplace) %attr(0644,root,named) %{_sysconfdir}/named.root.key
+%config(noreplace) %attr(0644,root,named) %{_sysconfdir}/named.ca
 %config(noreplace) %{_sysconfdir}/logrotate.d/named
 %{_tmpfilesdir}/named.conf
 %{_sysconfdir}/rwtab.d/named
@@ -814,7 +827,9 @@ fi;
 %dir %{_localstatedir}/named/dynamic
 %ghost %{_localstatedir}/log/named.log
 %defattr(0640,root,named,0750)
+%{_datadir}/named/
 %config %verify(not link) %{_localstatedir}/named/named.ca
+# Moved to %%_datadir/named, keep compat symlinks
 %config %verify(not link) %{_localstatedir}/named/named.localhost
 %config %verify(not link) %{_localstatedir}/named/named.loopback
 %config %verify(not link) %{_localstatedir}/named/named.empty
@@ -901,6 +916,7 @@ fi;
 %{_unitdir}/named-chroot.service
 %{_unitdir}/named-chroot-setup.service
 %{_libexecdir}/setup-named-chroot.sh
+%{_tmpfilesdir}/%{name}-chroot.conf
 %defattr(0664,root,named,-)
 %ghost %dev(c,1,3) %verify(not mtime) %{chroot_prefix}/dev/null
 %ghost %dev(c,1,8) %verify(not mtime) %{chroot_prefix}/dev/random
@@ -923,6 +939,7 @@ fi;
 %dir %{chroot_prefix}/%{_libdir}
 %dir %{chroot_prefix}/%{_libdir}/bind
 %dir %{chroot_prefix}/%{_datadir}/GeoIP
+%dir %{chroot_prefix}/%{_datadir}/named
 %{chroot_prefix}/proc
 %defattr(0660,root,named,01770)
 %dir %{chroot_prefix}%{_localstatedir}/named
@@ -944,17 +961,27 @@ fi;
 %endif
 
 %changelog
-* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-10.3
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.1
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
 
-* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-10.2
+* Wed Jan 28 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15
+- Add forgotten _libdir/named into bind-chroot tmpfiles (RHEL-132053)
+
+* Fri Dec 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-14
+- Create /var/named directories for bind-chroot (RHEL-132053)
+
+* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-13
 - Fix upstream reported regression in recent CVE fix (CVE-2025-8677)
 
-* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-10.1
+* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-12
 - Refuse malformed DNSKEY records (CVE-2025-8677)
 - Address various spoofing attacks (CVE-2025-40778)
 - Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
+
+* Fri Oct 03 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-11
+- Move named.* files from /var/named into /usr/share/named
+- Move named.ca into /etc/named.ca
 
 * Tue Sep 16 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-10
 - Fix failures in idna system test (RHEL-66172)
