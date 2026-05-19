@@ -1,0 +1,38 @@
+diff --git a/CHANGES b/CHANGES
+index 2b12128544..42c13c9dbd 100644
+--- a/CHANGES
++++ b/CHANGES
+@@ -1,3 +1,7 @@
++6173.	[bug]		Properly process extra "nameserver" lines in
++			resolv.conf otherwise the next line is not properly
++			processed. [GL #4066]
++
+ 	--- 9.16.23 released ---
+ 
+ 5752.	[bug]		Fix an assertion failure caused by missing member zones
+diff --git a/lib/irs/resconf.c b/lib/irs/resconf.c
+index da6066db7b..775f4e86a4 100644
+--- a/lib/irs/resconf.c
++++ b/lib/irs/resconf.c
+@@ -286,10 +286,6 @@ resconf_parsenameserver(irs_resconf_t *conf, FILE *fp) {
+ 	int cp;
+ 	isc_result_t result;
+ 
+-	if (conf->numns == RESCONFMAXNAMESERVERS) {
+-		return (ISC_R_SUCCESS);
+-	}
+-
+ 	cp = getword(fp, word, sizeof(word));
+ 	if (strlen(word) == 0U) {
+ 		return (ISC_R_UNEXPECTEDEND); /* Nothing on line. */
+@@ -301,6 +297,10 @@ resconf_parsenameserver(irs_resconf_t *conf, FILE *fp) {
+ 		return (ISC_R_UNEXPECTEDTOKEN); /* Extra junk on line. */
+ 	}
+ 
++	if (conf->numns == RESCONFMAXNAMESERVERS) {
++		return (ISC_R_SUCCESS);
++	}
++
+ 	result = add_server(conf->mctx, word, &conf->nameservers);
+ 	if (result != ISC_R_SUCCESS) {
+ 		return (result);
