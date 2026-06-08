@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.1
+Release:  40%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -203,6 +203,11 @@ Patch225: bind-9.16-CVE-2025-40778.patch
 Patch226: bind-9.16-properly-process-extra-nameserver-lines.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/a5e8d2354385d4f42a58113b16960d85ec306b09
 Patch227: bind-9.16-CVE-2026-1519.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/7f04d7104304fdc6b858c41bb44ad151b2c3e1b7
+Patch230: bind-9.16-CVE-2026-3039.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/ec2c98181115bd5f6c7087fcc74d816490d4312e
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/e5abd37cb2330af1fbfeba68eb32f2873390226d
+Patch231: bind-9.16-CVE-2026-5946.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1262,6 +1267,10 @@ fi;
 %endif
 
 %changelog
+* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.2
+- Fix GSS-API resource leak (CVE-2026-3039)
+- Invalid handling of CLASS != IN (CVE-2026-5946)
+
 * Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.1
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
