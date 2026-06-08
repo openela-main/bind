@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.7
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.8
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -207,6 +207,11 @@ Patch213: bind-9.11-d-max-records-checkconf.patch
 Patch214: bind-9.11-CVE-2025-40778.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/e5357c1623da3842227d2c76468b76bc983584d6
 Patch215: bind-9.11-CVE-2026-1519.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/94a96c69193587b2c6df30055fbb0c1d00622a7d
+Patch216: bind-9.11-CVE-2026-3039.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/bba70f08b1818f697e8292b79270a464279adc23
+# https://gitlab.isc.org/isc-projects/bind9/commit/befe1903d0aebfd69cb362c429afc1f9c1c89610
+Patch217: bind-9.11-CVE-2026-5946.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -637,6 +642,8 @@ are used for building ISC DHCP.
 %patch -P 213 -p1 -b .records-checkconf
 %patch -P 214 -p1 -b .CVE-2025-40778
 %patch -P 215 -p1 -b .CVE-2026-1519
+%patch -P 216 -p1 -b .CVE-2026-3039
+%patch -P 217 -p1 -b .CVE-2026-5946
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1689,6 +1696,10 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Wed May 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.8
+- Fix GSS-API resource leak (CVE-2026-3039)
+- Invalid handling of CLASS != IN (CVE-2026-5946)
+
 * Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.7
 - Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
