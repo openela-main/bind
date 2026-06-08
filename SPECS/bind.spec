@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  15%{?dist}.1
+Release:  15%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -160,6 +160,10 @@ Patch227: bind-9.20-CVE-2025-8677-dual-signing-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/5ef459eeaa92222ad28d2186f5eae9a586dece70
 Patch228: bind-9.18-CVE-2026-1519.patch
 Patch229: bind-9.18-CVE-2026-1519-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/03ce21cf3099bd461f95ac1f4f22cce80ae1ba65
+Patch230: bind-9.18-CVE-2026-3039.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/7ce6ce37b1b04af0953ed2d3211587465085600e
+Patch231: bind-9.18-CVE-2026-5946.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -961,6 +965,10 @@ fi;
 %endif
 
 %changelog
+* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.2
+- Fix GSS-API resource leak (CVE-2026-3039)
+- Invalid handling of CLASS != IN (CVE-2026-5946)
+
 * Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.1
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
