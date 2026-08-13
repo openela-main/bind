@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.2
+Release:  40%{?dist}.8
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -208,6 +208,19 @@ Patch230: bind-9.16-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/ec2c98181115bd5f6c7087fcc74d816490d4312e
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/e5abd37cb2330af1fbfeba68eb32f2873390226d
 Patch231: bind-9.16-CVE-2026-5946.patch
+# https://github.com/isc-projects/bind9/commit/8572cb15c037111a407b6b9f61bf23e0892f053d
+Patch232: bind-9.16-CVE-2026-11622.patch
+# https://github.com/isc-projects/bind9/commit/5f1d1f35d8ea137ee3afefbe50d76a9fb1199ab7
+# https://github.com/isc-projects/bind9/commit/71dadba745c5d2ca7e1d4788fccab3a7d6a929f2
+Patch233: bind-9.16-CVE-2026-11721.patch
+# https://github.com/isc-projects/bind9/commit/1b90fbb4f9d3d923516ff7841171269b993cfd6f
+Patch234: bind-9.16-CVE-2026-13204.patch
+# https://github.com/isc-projects/bind9/commit/ee2ac186bc5f75f7f3f7049f1a21e9a2014cee59
+Patch235: bind-9.16-CVE-2026-11331.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/af84538a2ce6722b89b8ef7f2a233a5c10d0207d
+Patch236: bind-9.16-CVE-2026-13321.patch
+# https://github.com/isc-projects/bind9/commit/238ec379e9bed56383ba2333e711e554b139ac13
+Patch237: bind-9.16-CVE-2026-10723.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1267,6 +1280,26 @@ fi;
 %endif
 
 %changelog
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.8
+- Fix NSEC3 signer validation (CVE-2026-10723)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.7
+- Fix CVE-2026-13321: reject out-of-zone NSEC next owner names
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.6
+- Fix RPZ name-too-long wildcard expansion (CVE-2026-11331)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.5
+- Fix dns_rdataset_addnoqname() accepting unsigned NSEC/NSEC3
+  (CVE-2026-13204)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.4
+- Fix dnssec-signzone and RRSIG wildcard validation (CVE-2026-11721)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.3
+- Prevent cache memory exhaustion under sustained attack
+  (CVE-2026-11622, RHEL-213397)
+
 * Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.2
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
