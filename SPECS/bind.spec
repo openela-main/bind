@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.8
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.14
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -212,6 +212,20 @@ Patch216: bind-9.11-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/bba70f08b1818f697e8292b79270a464279adc23
 # https://gitlab.isc.org/isc-projects/bind9/commit/befe1903d0aebfd69cb362c429afc1f9c1c89610
 Patch217: bind-9.11-CVE-2026-5946.patch
+# https://github.com/isc-projects/bind9/commit/0b72e907d10760c2a8b01fc1f5a1c1f0d1a4bfe0
+Patch218: bind-9.11-CVE-2026-11622.patch
+# https://github.com/isc-projects/bind9/commit/06778424f0f58375f0f3d6632813558c59d705c6
+# https://github.com/isc-projects/bind9/commit/e5b16cfd1c0b7d7760108e1ca9e1fd9db30d9e6a
+Patch219: bind-9.11-CVE-2026-11721.patch
+# https://github.com/isc-projects/bind9/commit/058023c66f11d78590d4aa8c4f98946c4c965e21
+# https://github.com/isc-projects/bind9/commit/f751e19a30d107f04c2f644aff9f8dab8fed03ab
+Patch220: bind-9.11-CVE-2026-13321.patch
+# https://github.com/isc-projects/bind9/commit/204fde85953d78475334694a7b9507dca47e73ba
+Patch221: bind-9.11-CVE-2026-13204.patch
+# https://github.com/isc-projects/bind9/commit/6965fa47edd3b45538db2b16488dbb6b4ad8066a
+Patch223: bind-9.11-CVE-2026-10723.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/c63f11976ffe6e0285e0a9a3524a53420786d50e
+Patch224: bind-9.11-CVE-2026-11721-test.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -644,6 +658,12 @@ are used for building ISC DHCP.
 %patch -P 215 -p1 -b .CVE-2026-1519
 %patch -P 216 -p1 -b .CVE-2026-3039
 %patch -P 217 -p1 -b .CVE-2026-5946
+%patch -P 218 -p1 -b .CVE-2026-11622
+%patch -P 219 -p1 -b .CVE-2026-11721
+%patch -P 220 -p1 -b .CVE-2026-13321
+%patch -P 221 -p1 -b .CVE-2026-13204
+%patch -P 223 -p1 -b .CVE-2026-10723
+%patch -P 224 -p1 -b .CVE-2026-11721-test
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1696,6 +1716,23 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-16.14
+- Validate NSEC3 signer matches owning zone (CVE-2026-10723)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-16.12
+- Prevent accepting unsigned NSEC/NSEC3 records (CVE-2026-13204)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-16.11
+- Reject out-of-zone NSEC entries in DNSSEC validation
+  (CVE-2026-13321)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-16.10
+- Reject RRSIG records with invalid label counts (CVE-2026-11721)
+- Add unittest check
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-16.9
+- Add reference counting to cache dns_slabheaders (CVE-2026-11622)
+
 * Wed May 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.8
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
