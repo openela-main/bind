@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  15%{?dist}.2
+Release:  15%{?dist}.10
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -164,6 +164,25 @@ Patch229: bind-9.18-CVE-2026-1519-test.patch
 Patch230: bind-9.18-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/7ce6ce37b1b04af0953ed2d3211587465085600e
 Patch231: bind-9.18-CVE-2026-5946.patch
+# https://github.com/isc-projects/bind9/commit/48f5aa5fb3746d6194edcc57e8792a8b3cc3b454
+Patch233: bind-9.18-CVE-2026-13204.patch
+# https://github.com/isc-projects/bind9/commit/dc328a199f96222e0c30cc20b7b795bfc2c9b2e4
+Patch234: bind-9.18-CVE-2026-11331.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/15089066b15f826d7487c3d160b5872820f84b83
+Patch235: bind-9.18-CVE-2026-11721.patch
+# https://github.com/isc-projects/bind9/commit/231b1ca3edfb26389e1af39181aa6b4413e87ec4
+Patch236: bind-9.18-CVE-2026-11622.patch
+# https://github.com/isc-projects/bind9/commit/36f3d50f9c8ebc8d25ee033e707ca502e20b083f
+Patch238: bind-9.18-CVE-2026-13321.patch
+# https://github.com/isc-projects/bind9/commit/c9cb6a5e24e43489cf3fd4d4cc2193b6a74499cb
+Patch239: bind-9.18-CVE-2026-10723.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/adc8285d23e2eac6ec463f5dbc5a9596fdd36c60
+# https://gitlab.isc.org/isc-projects/bind9/commit/095b11f20f911f5b8059bdc349b256d6c64ece30
+Patch240: bind-9.18-CVE-2026-11331-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/19e496ca260b6a756ae1378e8ebcbdb666b7d9ed
+Patch241: bind-9.18-CVE-2026-11721-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/1a4986e2533f87e80eb21da3f06708d335aff1e2
+Patch242: bind-9.18-CVE-2026-11721-fix2.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -593,6 +612,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 install -m 644 %{SOURCE1} ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/named
 install -m 644 %{SOURCE49} ${RPM_BUILD_ROOT}%{_sysconfdir}/named-chroot.files
 
+%if "%{_bindir}" != "%{_sbindir}"
 pushd ${RPM_BUILD_ROOT}%{_sbindir}
 # Compatibility with previous major versions, only for selected binaries
 for BIN in named-checkconf named-checkzone named-compilezone
@@ -600,6 +620,7 @@ do
   ln -s ../bin/$BIN $BIN
 done
 popd
+%endif
 
 # Remove libtool .la files:
 find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
@@ -965,6 +986,26 @@ fi;
 %endif
 
 %changelog
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.10
+- Validate NSEC3 signer matches owning zone (CVE-2026-10723)
+
+* Fri Jul 24 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.9
+- Reject out-of-zone NSEC next owner names (CVE-2026-13321)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.7
+- Fix reference-counted dns_slabheaders in cache (CVE-2026-11622)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.6
+- Fix RRSIG label count validation for wildcard cache poisoning
+  (CVE-2026-11721)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.5
+- Fix RPZ name-too-long wildcard expansion (CVE-2026-11331)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.4
+- Fix assertion failure on malformed NSEC/NSEC3 responses
+  (CVE-2026-13204)
+
 * Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.2
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
