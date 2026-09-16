@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.8
+Release:  40%{?dist}.9
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -543,6 +543,9 @@ sed -e 's|"$TOP/config.guess"|"$TOP_SRCDIR/config.guess"|' -i bin/tests/system/i
 sed -e 's, "enable-developer",& \&\& systemctl is-system-running \&>/dev/null \&\& ! [ -e /mnt/tests ],' \
     -i bin/tests/system/run.sh
 
+install -m 644 -p %{SOURCE27} bind.keys
+# Ensure build-in keys are regenerated
+rm -f bind.keys.h
 :;
 
 
@@ -890,10 +893,10 @@ cp -a build/doc/arm/Bv9ARM.pdf ${RPM_BUILD_ROOT}%{_pkgdocdir}
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/named.log
 
 # configuration files:
-install -m 640 %{SOURCE16} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.conf
+install -m 640 %{SOURCE16} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named.conf
 touch ${RPM_BUILD_ROOT}%{_sysconfdir}/rndc.{key,conf}
-install -m 644 %{SOURCE27} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
-install -m 644 %{SOURCE36} ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
+install -m 644 %{SOURCE27} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
+install -m 644 %{SOURCE36} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/named
 install -p -m 644 %{SOURCE17} ${RPM_BUILD_ROOT}%{_datadir}/named/named.ca
@@ -1280,6 +1283,10 @@ fi;
 %endif
 
 %changelog
+* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.9
+- Add new root key 38696 into package files (RHEL-255763)
+- Update built-in anchors in delv and named
+
 * Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.8
 - Fix NSEC3 signer validation (CVE-2026-10723)
 
