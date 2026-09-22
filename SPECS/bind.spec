@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  15%{?dist}.10
+Release:  15%{?dist}.11
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -986,6 +986,9 @@ fi;
 %endif
 
 %changelog
+* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.11
+- Add new root key 38696 into package files too (RHEL-252999)
+
 * Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.10
 - Validate NSEC3 signer matches owning zone (CVE-2026-10723)
 
