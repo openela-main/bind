@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.9
+Release:  40%{?dist}.10
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -221,6 +221,15 @@ Patch235: bind-9.16-CVE-2026-11331.patch
 Patch236: bind-9.16-CVE-2026-13321.patch
 # https://github.com/isc-projects/bind9/commit/238ec379e9bed56383ba2333e711e554b139ac13
 Patch237: bind-9.16-CVE-2026-10723.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/1c6cfd7c6860dbe80114b3df148b69f7f8e75f59
+Patch238: bind-9.16-CVE-2026-19666.patch
+Patch239: bind-9.16-CVE-2026-19666-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/fad1c3dc0730f0458fed22b732861f612de0f776
+Patch241: bind-9.16-CVE-2026-80274.patch
+Patch242: bind-9.16-CVE-2026-80274-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/9a5493e6c9daef33577391ff60bdaf6ae5409f34
+Patch243: bind-9.16-CVE-2026-19667.patch
+Patch244: bind-9.16-CVE-2026-19667-test.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1283,6 +1292,11 @@ fi;
 %endif
 
 %changelog
+* Thu Sep 24 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.10
+- Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
+- Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
+- Reject oversized negative cached records early (CVE-2026-19667)
+
 * Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.9
 - Add new root key 38696 into package files (RHEL-255763)
 - Update built-in anchors in delv and named
