@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  15%{?dist}.11
+Release:  15%{?dist}.12
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -183,6 +183,18 @@ Patch240: bind-9.18-CVE-2026-11331-test.patch
 Patch241: bind-9.18-CVE-2026-11721-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/1a4986e2533f87e80eb21da3f06708d335aff1e2
 Patch242: bind-9.18-CVE-2026-11721-fix2.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/78175f9749fecdac4eb0d4b08dd064968b4c55f8
+Patch243: bind-9.18-CVE-2026-19666.patch
+Patch244: bind-9.18-CVE-2026-19666-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/2c06dd156f2338bb873d7ae775a7e2fca37d0bc9
+Patch245: bind-9.18-CVE-2026-81563.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/2c72008b25c916d75dd4df34550954feb75a1ccd
+Patch246: bind-9.18-CVE-2026-80274.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/c4203fb70e3985452afddeadb7075aa91ae05d7d
+Patch247: bind-9.18-CVE-2026-19667.patch
+Patch248: bind-9.18-CVE-2026-19667-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/17177ec18a4a62b7c67a6d76b3e8efb94886caa6
+Patch249: bind-9.18-CVE-2026-81736.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -986,6 +998,13 @@ fi;
 %endif
 
 %changelog
+* Thu Sep 17 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.12
+- Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
+- Prevent memory leak on following HTTPS/SVCB RR (CVE-2026-81563)
+- Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
+- Reject oversized negative cached records early (CVE-2026-19667)
+- Set limit to following HTTPS/SVCB aliases (CVE-2026-81736)
+
 * Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.11
 - Add new root key 38696 into package files too (RHEL-252999)
 
