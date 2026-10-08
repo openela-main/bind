@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.15
+Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.16
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -226,6 +226,14 @@ Patch221: bind-9.11-CVE-2026-13204.patch
 Patch223: bind-9.11-CVE-2026-10723.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/c63f11976ffe6e0285e0a9a3524a53420786d50e
 Patch224: bind-9.11-CVE-2026-11721-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/3d9d08bc389b57dc0209fa4e1013bfddf22026dc
+Patch225: bind-9.11-CVE-2026-19666.patch
+Patch226: bind-9.11-CVE-2026-19666-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/31db8808cadead4568fae82ea4bb0a478636ae12
+Patch227: bind-9.11-CVE-2026-80274.patch
+Patch228: bind-9.11-CVE-2026-80274-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/2b4ed52ef013900fe658932ed64ac82392ba2e3c
+Patch229: bind-9.11-CVE-2026-19667.patch
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -664,6 +672,11 @@ are used for building ISC DHCP.
 %patch -P 221 -p1 -b .CVE-2026-13204
 %patch -P 223 -p1 -b .CVE-2026-10723
 %patch -P 224 -p1 -b .CVE-2026-11721-test
+%patch -P 225 -p1 -b .CVE-2026-19666
+%patch -P 226 -p1 -b .CVE-2026-19666-test
+%patch -P 227 -p1 -b .CVE-2026-80274
+%patch -P 228 -p1 -b .CVE-2026-80274
+%patch -P 229 -p1 -b .CVE-2026-19667
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1719,6 +1732,11 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Wed Sep 30 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.16
+- Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
+- Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
+- Reject oversized negative cached records early (CVE-2026-19667)
+
 * Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.15
 - Add new root key 38696 into package files (RHEL-131891)
 - Update built-in anchors in delv and named
