@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.10
+Release:  40%{?dist}.12
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -230,6 +230,12 @@ Patch242: bind-9.16-CVE-2026-80274-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/9a5493e6c9daef33577391ff60bdaf6ae5409f34
 Patch243: bind-9.16-CVE-2026-19667.patch
 Patch244: bind-9.16-CVE-2026-19667-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/742dc803a85e7a7b9949010db550351275831aa6
+Patch245: bind-9.16-no-header-prev-in-expire-lru-headers.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/216f81c29a426eaf4469df63f90cf12a43f702f6
+Patch246: bind-9.16-CVE-2026-19662.patch
+Patch247: bind-9.16-CVE-2026-19662-test.patch
+
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1292,6 +1298,12 @@ fi;
 %endif
 
 %changelog
+* Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.12
+- Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
+
+* Wed Oct 07 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.11
+- Backport 'Do not use header_prev in expire_lru_headers' from upstream. (RHEL-276913)
+
 * Thu Sep 24 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.10
 - Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
 - Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
