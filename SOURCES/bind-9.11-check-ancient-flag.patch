@@ -1,0 +1,74 @@
+From 2aaecd8923b5b41e58c21ce3a4b7e71ca1328610 Mon Sep 17 00:00:00 2001
+From: Matthijs Mekking <matthijs@isc.org>
+Date: Tue, 10 Aug 2021 12:18:12 +0200
+Subject: [PATCH] Add extra checks for !ANCIENT(header)
+
+There are some occurrences where we check if a header exists in the
+rbtdb. These cases require that the header is also not marked as
+ancient (aka ready for cleanup). These cases involve finding certain
+data in cache.
+
+(cherry picked from commit e2d48968647b520d4d54972ec7cd7581cb548c0d)
+---
+ lib/dns/rbtdb.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/lib/dns/rbtdb.c b/lib/dns/rbtdb.c
+index 909f471..8bc6326 100644
+--- a/lib/dns/rbtdb.c
++++ b/lib/dns/rbtdb.c
+@@ -3873,7 +3873,8 @@ find_wildcard(rbtdb_search_t *search, dns_rbtnode_t **nodep,
+ 		     header != NULL;
+ 		     header = header->next) {
+ 			if (header->serial <= search->serial &&
+-			    !IGNORE(header) && EXISTS(header))
++			    !IGNORE(header) && EXISTS(header) &&
++			    !ANCIENT(header))
+ 				break;
+ 		}
+ 		if (header != NULL)
+@@ -3932,7 +3933,8 @@ find_wildcard(rbtdb_search_t *search, dns_rbtnode_t **nodep,
+ 				     header != NULL;
+ 				     header = header->next) {
+ 					if (header->serial <= search->serial &&
+-					    !IGNORE(header) && EXISTS(header))
++					    !IGNORE(header) && EXISTS(header) &&
++					    !ANCIENT(header))
+ 						break;
+ 				}
+ 				NODE_UNLOCK(lock, isc_rwlocktype_read);
+@@ -4966,11 +4968,11 @@ cache_zonecut_callback(dns_rbtnode_t *node, dns_name_t *name, void *arg) {
+ 				       &header_prev)) {
+ 			/* Do nothing. */
+ 		} else if (header->type == dns_rdatatype_dname &&
+-			   EXISTS(header)) {
++			   EXISTS(header) && !ANCIENT(header)) {
+ 			dname_header = header;
+ 			header_prev = header;
+ 		} else if (header->type == RBTDB_RDATATYPE_SIGDNAME &&
+-			 EXISTS(header)) {
++			 EXISTS(header) && !ANCIENT(header)) {
+ 			sigdname_header = header;
+ 			header_prev = header;
+ 		} else
+@@ -5038,7 +5040,7 @@ find_deepest_zonecut(rbtdb_search_t *search, dns_rbtnode_t *node,
+ 					       &locktype, lock, search,
+ 					       &header_prev)) {
+ 				/* Do nothing. */
+-			} else if (EXISTS(header)) {
++			} else if (EXISTS(header) && !ANCIENT(header)) {
+ 				/*
+ 				 * We've found an extant rdataset.  See if
+ 				 * we're interested in it.
+@@ -5641,7 +5643,7 @@ cache_findzonecut(dns_db_t *db, dns_name_t *name, unsigned int options,
+ 				       &locktype, lock, &search,
+ 				       &header_prev)) {
+ 			/* Do nothing. */
+-		} else if (EXISTS(header)) {
++		} else if (EXISTS(header) && !ANCIENT(header)) {
+ 			/*
+ 			 * If we found a type we were looking for, remember
+ 			 * it.
+-- 
+2.55.0
+

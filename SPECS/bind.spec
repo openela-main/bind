@@ -68,7 +68,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.11.36
-Release:  16%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}.16
+Release:  18%{?PATCHVER:.%{PATCHVER}}%{?PREVER:.%{PREVER}}%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -234,6 +234,16 @@ Patch227: bind-9.11-CVE-2026-80274.patch
 Patch228: bind-9.11-CVE-2026-80274-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/2b4ed52ef013900fe658932ed64ac82392ba2e3c
 Patch229: bind-9.11-CVE-2026-19667.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/5c23ec44bd38ba124c621b7440f336490fd1a9a6
+Patch230: bind-9.11-check-ancient-flag.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/ba62561ab107181727decb19933680ba6b900fa9
+Patch231: bind-9.11-CVE-2026-19662.patch
+Patch232: bind-9.11-CVE-2026-19662-test.patch
+# https://github.com/isc-projects/bind9/commit/e6a38e901d7a866762cdbaf501d82694bdc5ad62
+Patch233: bind-9.11-CVE-2026-19630.patch
+# https://github.com/isc-projects/bind9/commit/4a49103b500d47afbd11f045e753105b135c844a
+Patch234: bind-9.11-CVE-2026-94300.patch
+
 
 # SDB patches
 Patch11: bind-9.3.2b2-sdbsrc.patch
@@ -677,6 +687,11 @@ are used for building ISC DHCP.
 %patch -P 227 -p1 -b .CVE-2026-80274
 %patch -P 228 -p1 -b .CVE-2026-80274
 %patch -P 229 -p1 -b .CVE-2026-19667
+%patch -P 230 -p1 -b .ancient-flag-checks
+%patch -P 231 -p1 -b .CVE-2026-19662
+%patch -P 232 -p1 -b .CVE-2026-19662-test
+%patch -P 233 -p1 -b .CVE-2026-19630
+%patch -P 234 -p1 -b .CVE-2026-94300
 
 mkdir lib/dns/tests/testdata/dstrandom
 cp -a %{SOURCE50} lib/dns/tests/testdata/dstrandom/random.data
@@ -1732,6 +1747,27 @@ rm -rf ${RPM_BUILD_ROOT}
 %endif
 
 %changelog
+* Wed Oct 21 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-18
+- CVE-2026-94300 bind: bind: Arbitrary code execution via GSS-TSIG
+  UDP message replay
+
+* Wed Oct 21 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.11.36-17
+- CVE-2026-19630 bind: BIND: Denial of Service via unbounded processing of crafted DNS messages
+  processing of crafted DNS messages
+
+* Thu Oct 15 2026 Fedor Vorobev <fvorobev@redhat.com> 32:9.11.36-16.17
+- Backport additional checks for the RDATASET_ATTR_ANCIENT flag when
+  looking for rdatasetheaders. Functions find_deepest_zonecut() and
+  cache_findzonecut() would otherwise pickup headers with the ancient
+  flag set, which other threads may attempt to free in the timespan between
+  unlocking the read lock and locking the write lock, causing
+  need_header_update() and update_header() to work with invalidated data.
+  (RHEL-257162)
+- Fix CVE-2026-19662. The patch for CVE-2026-11622, which added reference
+  counting to rdatasetheaders within rbtdb, introduced a regression where
+  under certain timing conditions concurrent recursive queries could cause
+  named to crash due to use-after-free.
+
 * Wed Sep 30 2026 Petr Menšík <pemensik@redhat.com> - 32:9.11.36-16.16
 - Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
 - Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
