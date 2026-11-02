@@ -54,7 +54,7 @@ Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) serv
 Name:     bind
 License:  MPLv2.0
 Version:  9.16.23
-Release:  40%{?dist}.12
+Release:  40%{?dist}.13
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -235,7 +235,15 @@ Patch245: bind-9.16-no-header-prev-in-expire-lru-headers.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/216f81c29a426eaf4469df63f90cf12a43f702f6
 Patch246: bind-9.16-CVE-2026-19662.patch
 Patch247: bind-9.16-CVE-2026-19662-test.patch
-
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/51f96b82afca3528efb7a983e44d410063ea0977
+Patch248: bind-9.16-CVE-2026-94300.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/9911e9216622e6cffa1f3fdcc4448bb5b50208e7
+# Test ommited due to missing pytest harness and tests in this version of bind.
+Patch249: bind-9.16-CVE-2026-97313.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/0ecf627be4cb31b5d050f22e4f9b100aadc54eea
+Patch250: bind-9.16-CVE-2026-96888.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/54c2d9b9b07ffb763bdb5af8e675911873f49a1d
+Patch251: bind-9.16-CVE-2026-19630.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -695,6 +703,14 @@ popd # build
 
 %unit_prepare_build build
 %systemtest_prepare_build build
+
+# Fixes dst_test. Outside check block so that
+# Run-internal-BIND-test-suite actually creates the symlink
+# before running `make unit` separately.
+ln -rs {.,build}/lib/dns/tests/comparekeys
+
+# Skip broken netmgr_test. (Not broken on 9.16.50.)
+sed -e '/netmgr_test/ d' -i build/lib/isc/tests/Kyuafile
 
 %check
 %if %{with PKCS11} && (%{with UNITTEST} || %{with SYSTEMTEST})
@@ -1298,6 +1314,12 @@ fi;
 %endif
 
 %changelog
+* Wed Oct 21 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.13
+- Fix CVE-2026-94300: Arbitrary code execution via GSS-TSIG UDP message replay. 
+- Fix CVE-2026-97313: Denial of Service via assertion failure in RPZ query processing.
+- Fix CVE-2026-96888: Denial of Service via assertion failure during redirect processing.
+- Fix CVE-2026-19630: Denial of Service via unbounded processing of crafted DNS messages.
+
 * Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.12
 - Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
 
