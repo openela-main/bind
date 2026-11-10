@@ -1,0 +1,35 @@
+From 68c631cf8dc67cb315d738a55a97fff26c0818e7 Mon Sep 17 00:00:00 2001
+From: Fedor Vorobev <fvorobev@redhat.com>
+Date: Thu, 23 Jul 2026 10:55:42 +0200
+Subject: [PATCH] Remove OPENSSL_API_LEVEL < 30000 check from an engine check.
+
+It was added in 5f8ac682c9912aaf564595f73f777672743f56aa upstream
+commit, which was a cherry pick from a newer version of bind. As this is
+the only instance of OPENSSL_API_LEVEL < 30000 within bind 9.16.50, I
+believe it was done in error.
+
+This check was preventing bind from finding the OpenSSL engine for RSA
+algorithms. `dnssec-keyfromlabel` would error out with 'no engine'
+whenever an RSA algorithm was used.
+
+Resolves: RHEL-213788
+---
+ lib/dns/opensslrsa_link.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/dns/opensslrsa_link.c b/lib/dns/opensslrsa_link.c
+index 09412c58b5..81ce6cc7cb 100644
+--- a/lib/dns/opensslrsa_link.c
++++ b/lib/dns/opensslrsa_link.c
+@@ -931,7 +931,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
+ 
+ 	for (i = 0; i < priv.nelements; i++) {
+ 		switch (priv.elements[i].tag) {
+-#if !defined(OPENSSL_NO_ENGINE) && OPENSSL_API_LEVEL < 30000
++#if !defined(OPENSSL_NO_ENGINE)
+ 		case TAG_RSA_ENGINE:
+ 			engine = (char *)priv.elements[i].data;
+ 			break;
+-- 
+2.55.0
+

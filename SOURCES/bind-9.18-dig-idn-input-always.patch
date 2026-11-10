@@ -1,4 +1,4 @@
-From d023241c7e2921926be8bd1784424eefba2a3c54 Mon Sep 17 00:00:00 2001
+From cd5e88407380c5ced9a51736f0c2d679d053e188 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
 Date: Wed, 6 Nov 2024 21:29:47 +0100
 Subject: [PATCH] Allow always IDN input in dig
@@ -37,10 +37,10 @@ Signed-off-by: Petr Menšík <pemensik@redhat.com>
  2 files changed, 18 insertions(+), 7 deletions(-)
 
 diff --git a/bin/dig/dig.rst b/bin/dig/dig.rst
-index a1d7cfe..85acde1 100644
+index d27b1fd..3a9f9c6 100644
 --- a/bin/dig/dig.rst
 +++ b/bin/dig/dig.rst
-@@ -358,9 +358,9 @@ abbreviation is unambiguous; for example, ``+cd`` is equivalent to
+@@ -348,9 +348,9 @@ abbreviation is unambiguous; for example, ``+cd`` is equivalent to
     This option processes [or does not process] IDN domain names on input. This requires
     ``IDN SUPPORT`` to have been enabled at compile time.
  
@@ -54,10 +54,10 @@ index a1d7cfe..85acde1 100644
  ``+[no]idnout``
     This option converts [or does not convert] puny code on output. This requires
 diff --git a/bin/dig/dighost.c b/bin/dig/dighost.c
-index 7e88b6b..fbd5ad9 100644
+index ac7e1fb..9555e63 100644
 --- a/bin/dig/dighost.c
 +++ b/bin/dig/dighost.c
-@@ -620,6 +620,9 @@ clone_server_list(dig_serverlist_t src, dig_serverlist_t *dest) {
+@@ -622,6 +622,9 @@ clone_server_list(dig_serverlist_t src, dig_serverlist_t *dest) {
  dig_lookup_t *
  make_empty_lookup(void) {
  	dig_lookup_t *looknew;
@@ -67,7 +67,7 @@ index 7e88b6b..fbd5ad9 100644
  
  	debug("make_empty_lookup()");
  
-@@ -671,8 +674,8 @@ make_empty_lookup(void) {
+@@ -673,8 +676,8 @@ make_empty_lookup(void) {
  	looknew->qr = false;
  	looknew->accept_reply_unexpected_src = false;
  #ifdef HAVE_LIBIDN2
@@ -78,9 +78,9 @@ index 7e88b6b..fbd5ad9 100644
  #else  /* ifdef HAVE_LIBIDN2 */
  	looknew->idnin = false;
  	looknew->idnout = false;
-@@ -4493,8 +4496,16 @@ idn_locale_to_ace(const char *src, char *dst, size_t dstlen) {
- 	 */
- 	res = idn2_to_ascii_lz(src, &ascii_src, IDN2_NONTRANSITIONAL);
+@@ -4497,8 +4500,16 @@ idn_locale_to_ace(const char *src, char *dst, size_t dstlen) {
+ 		res = idn2_to_ascii_lz(src, &ascii_src, IDN2_TRANSITIONAL);
+ 	}
  	if (res != IDN2_OK) {
 -		fatal("'%s' is not a legal IDNA2008 name (%s), use +noidnin",
 -		      src, idn2_strerror(res));
@@ -98,5 +98,5 @@ index 7e88b6b..fbd5ad9 100644
  
  	/*
 -- 
-2.50.1
+2.51.1
 

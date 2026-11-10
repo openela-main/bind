@@ -1,0 +1,31 @@
+From e4b0698dc5e98b951050299c28be94514427688b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ond=C5=99ej=20Sur=C3=BD?= <ondrej@isc.org>
+Date: Tue, 18 Jun 2024 08:56:18 +0200
+Subject: [PATCH] Use LC_ALL to override all system locales
+
+The system tests were overriding the local locale by setting LANG to C.
+This does not override the locale in case there are individual LC_<*>
+variables like LC_CTYPE explicitly set.
+
+Use LC_ALL=C instead which is the proper way of overriding all currently
+set locales.
+---
+ bin/tests/system/conf.sh.common | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bin/tests/system/conf.sh.common b/bin/tests/system/conf.sh.common
+index a91c0d9f4e..2b0bc20896 100644
+--- a/bin/tests/system/conf.sh.common
++++ b/bin/tests/system/conf.sh.common
+@@ -20,7 +20,7 @@ testsock6() {
+ 	fi
+ }
+ 
+-export LANG=C
++export LC_ALL=C
+ 
+ . ${TOP}/version
+ 
+-- 
+2.53.0
+

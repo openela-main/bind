@@ -1,0 +1,70 @@
+From fb3761d9b1ca804fd6c2acabe42745f9ee79bac0 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Thu, 18 Jul 2024 19:36:04 +0200
+Subject: [PATCH] Do not block start if inline-signing and dyn. updates are not
+ set
+
+Attempts to modify behaviour done in 9.16.33. It requires explicit
+specification of inline-signing yes for any zone, which has specified
+dnssec-policy. For primary zones also when  allow-update and
+update-policy are disabled. Turn it into warning only on RHEL builds,
+do not prevent starting of named.
+
+That should roughly emulate error message present on 9.16.23:
+'inline-signing;' cannot be set to 'no' if dnssec-policy is also set on
+a non-dynamic DNS zone.
+
+But point a link into upstream KB article in any case. This has appeared
+only when inline-signing were specified in a zone block. For that case
+make it still fatal, but with new message.
+
+https://downloads.isc.org/isc/bind9/9.16.50/doc/arm/html/notes.html#known-issues
+
+Related to upstream commit 30fceec069ae0942749e6aa783f67756e82fcaae.
+---
+ lib/bind9/check.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/lib/bind9/check.c b/lib/bind9/check.c
+index ee64543..01c03d3 100644
+--- a/lib/bind9/check.c
++++ b/lib/bind9/check.c
+@@ -2951,20 +2951,32 @@ check_zoneconf(const cfg_obj_t *zconfig, const cfg_obj_t *voptions,
+ 		}
+ 
+ 		if (has_dnssecpolicy) {
++			/* Red Hat downstream change. Warn only about inline-signing
++			 * if inline-signing is not present in zone definition.
++			 * But fail hard if present, but disabled, like before. */
+ 			if (!ddns && !signing) {
+-				cfg_obj_log(kasp, logctx, ISC_LOG_ERROR,
+-					    "'inline-signing yes;' must also "
++				const char *verb = "should";
++				int log_lvl = ISC_LOG_WARNING;
++
++				if (res1 == ISC_R_SUCCESS) {
++					verb = "must";
++					log_lvl = ISC_LOG_ERROR;
++					result = ISC_R_FAILURE;
++				}
++
++				cfg_obj_log(kasp, logctx, log_lvl,
++					    "'inline-signing yes;' %s also "
+ 					    "be configured explicitly for "
+ 					    "zones using dnssec-policy%s. See "
+ 					    "https://kb.isc.org/docs/"
+ 					    "dnssec-policy-requires-dynamic-"
+ 					    "dns-or-inline-signing",
++					    verb,
+ 					    (ztype == CFG_ZONE_PRIMARY)
+ 						    ? " without a configured "
+ 						      "'allow-update' or "
+ 						      "'update-policy'"
+ 						    : "");
+-				result = ISC_R_FAILURE;
+ 			}
+ 		}
+ 
+-- 
+2.45.2
+

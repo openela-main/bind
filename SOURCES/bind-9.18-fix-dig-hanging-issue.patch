@@ -1,0 +1,173 @@
+diff --git a/bin/dig/dighost.c b/bin/dig/dighost.c
+index ac7e1fb55b..9f1a05ea10 100644
+--- a/bin/dig/dighost.c
++++ b/bin/dig/dighost.c
+@@ -1571,6 +1571,31 @@ check_if_done(void) {
+ 	}
+ }
+ 
++
++/*%
++ * Check if we're done with all the queries in the lookup, except for
++ * the `except_q` query (can be NULL if no exception is required).
++ * Expects `l` to be a valid and locked lookup.
++ */
++static bool
++check_if_queries_done(dig_lookup_t *l, dig_query_t *except_q) {
++	dig_query_t *q = ISC_LIST_HEAD(l->q);
++
++	debug("check_if_queries_done(%p)", l);
++
++	while (q != NULL) {
++		if (!q->started || q->waiting_connect || q->waiting_senddone || q->pending_free) {
++			if (!q->canceled && q != except_q) {
++				debug("there is a pending query %p", q);
++				return (false);
++			}
++		}
++		q = ISC_LIST_NEXT(q, link);
++	}
++
++	return (true);
++}
++
+ /*%
+  * Clear out a query when we're done with it.  WARNING: This routine
+  * WILL invalidate the query pointer.
+@@ -2557,12 +2582,13 @@ setup_lookup(dig_lookup_t *lookup) {
+ 		query->waiting_senddone = false;
+ 		query->pending_free = false;
+ 		query->recv_made = false;
+-		query->first_pass = true;
++		query->started = false;
+ 		query->first_soa_rcvd = false;
+ 		query->second_rr_rcvd = false;
+ 		query->first_repeat_rcvd = false;
+ 		query->warn_id = true;
+ 		query->timedout = false;
++		query->canceled = false;
+ 		query->first_rr_serial = 0;
+ 		query->second_rr_serial = 0;
+ 		query->servname = serv->servername;
+@@ -2660,6 +2686,7 @@ cancel_lookup(dig_lookup_t *lookup) {
+ 	while (query != NULL) {
+ 		REQUIRE(DIG_VALID_QUERY(query));
+ 		next = ISC_LIST_NEXT(query, link);
++		query->canceled = true;
+ 		if (query->sock != NULL) {
+ 			isc_socket_cancel(query->sock, global_task,
+ 					  ISC_SOCKCANCEL_ALL);
+@@ -2902,6 +2929,12 @@ send_udp(dig_query_t *query) {
+ 			return;
+ 		}
+ 
++		query->started = true;
++		if (atomic_load(&cancel_now)) {
++			return;
++		}
++		INSIST(!free_now);
++
+ 		result = isc_socket_create(socketmgr,
+ 					   isc_sockaddr_pf(&query->sockaddr),
+ 					   isc_sockettype_udp, &query->sock);
+@@ -3028,6 +3061,10 @@ connect_timeout(isc_task_t *task, isc_event_t *event) {
+ 				clear_query(query);
+ 			}
+ 		}
++		if (check_if_queries_done(l, query)) {
++			cancel_lookup(l);
++			check_next_lookup(l);
++		}
+ 		UNLOCK_LOOKUP;
+ 		return;
+ 	}
+@@ -3283,6 +3320,14 @@ connect_done(isc_task_t *task, isc_event_t *event) {
+ 	query = sevent->ev_arg;
+ 	REQUIRE(DIG_VALID_QUERY(query));
+ 
++	query->started = true;
++
++	if (atomic_load(&cancel_now)) {
++		return;
++	}
++
++	INSIST(!free_now);
++
+ 	INSIST(query->waiting_connect);
+ 
+ 	query->waiting_connect = false;
+@@ -4004,6 +4049,9 @@ recv_done(isc_task_t *task, isc_event_t *event) {
+ 						 : "recursion not available",
+ 					 query->servname);
+ 			clear_query(query);
++			if (check_if_queries_done(l, query)) {
++				cancel_lookup(l);
++			}
+ 			check_next_lookup(l);
+ 			dns_message_detach(&msg);
+ 			isc_event_free(&event);
+@@ -4129,7 +4177,12 @@ recv_done(isc_task_t *task, isc_event_t *event) {
+ 				l->trace_root = false;
+ 				usesearch = false;
+ 			} else {
++				/*
++				 * This is a query in the followup lookup
++				 */
+ 				dighost_printmessage(query, &b, msg, true);
++
++				docancel = check_if_queries_done(l, query);
+ 			}
+ 		}
+ 	}
+@@ -4309,6 +4362,7 @@ cancel_all(void) {
+ 			nq = ISC_LIST_NEXT(q, link);
+ 			debug("canceling pending query %p, belonging to %p", q,
+ 			      current_lookup);
++			q->canceled = true;
+ 			if (q->sock != NULL) {
+ 				isc_socket_cancel(q->sock, NULL,
+ 						  ISC_SOCKCANCEL_ALL);
+@@ -4322,6 +4376,7 @@ cancel_all(void) {
+ 			nq = ISC_LIST_NEXT(q, clink);
+ 			debug("canceling connecting query %p, belonging to %p",
+ 			      q, current_lookup);
++			q->canceled = true;
+ 			if (q->sock != NULL) {
+ 				isc_socket_cancel(q->sock, NULL,
+ 						  ISC_SOCKCANCEL_ALL);
+diff --git a/bin/dig/include/dig/dig.h b/bin/dig/include/dig/dig.h
+index 8bf9613db3..d7eb49963c 100644
+--- a/bin/dig/include/dig/dig.h
++++ b/bin/dig/include/dig/dig.h
+@@ -168,9 +168,9 @@ struct dig_lookup {
+ struct dig_query {
+ 	unsigned int  magic;
+ 	dig_lookup_t *lookup;
+-	bool waiting_connect, pending_free, waiting_senddone, first_pass,
++	bool waiting_connect, pending_free, waiting_senddone, started,
+ 		first_soa_rcvd, second_rr_rcvd, first_repeat_rcvd, recv_made,
+-		warn_id, timedout;
++		warn_id, timedout, canceled;
+ 	uint32_t      first_rr_serial;
+ 	uint32_t      second_rr_serial;
+ 	uint32_t      msg_count;
+diff --git a/bin/tests/system/digdelv/tests.sh b/bin/tests/system/digdelv/tests.sh
+index fd7b383608..13044f4102 100644
+--- a/bin/tests/system/digdelv/tests.sh
++++ b/bin/tests/system/digdelv/tests.sh
+@@ -1040,6 +1040,15 @@ if [ -x "$DIG" ]; then
+   if [ $ret -ne 0 ]; then echo_i "failed"; fi
+   status=$((status + ret))
+ 
++  # See [GL #3248] for more information
++  n=$((n+1))
++  echo_i "check that dig correctly refuses to use a server with a IPv4 mapped IPv6 address after failing with a regular IP address ($n)"
++  ret=0
++  dig_with_opts +nomapped @10.53.0.8 @::ffff:10.53.0.8 a.example > dig.out.test$n 2>&1 || ret=1
++  grep -F ";; Skipping mapped address" dig.out.test$n > /dev/null || ret=1
++  grep -F ";; No acceptable nameservers" dig.out.test$n > /dev/null || ret=1
++  if [ $ret -ne 0 ]; then echo_i "failed"; fi
++  status=$((status+ret))
+ else
+   echo_i "$DIG is needed, so skipping these dig tests"
+ fi

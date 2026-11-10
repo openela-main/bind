@@ -53,8 +53,8 @@
 Summary:  The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) server
 Name:     bind
 License:  MPLv2.0
-Version:  9.16.23
-Release:  40%{?dist}.13
+Version:  9.16.50
+Release:  11%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -62,7 +62,7 @@ Source0:  https://downloads.isc.org/isc/bind9/%{version}/bind-%{version}.tar.xz
 Source1:  named.sysconfig
 Source2:  https://downloads.isc.org/isc/bind9/%{version}/bind-%{version}.tar.xz.asc
 Source3:  named.logrotate
-Source4:  https://downloads.isc.org/isc/pgpkeys/codesign2021.txt
+Source4:  https://www.isc.org/docs/isc-keyblock.asc
 Source16: named.conf
 # Refresh by command: dig @a.root-servers.net. +tcp +norec
 # or from URL
@@ -100,64 +100,13 @@ Patch135:bind-9.14-config-pkcs11.patch
 # Fedora specific patch to distribute native-pkcs#11 functionality
 Patch136:bind-9.10-dist-native-pkcs11.patch
 # Do not use isc-pkcs11.
-Patch149:bind-9.11-kyua-pkcs11.patch
+Patch137:bind-9.11-kyua-pkcs11.patch
+# Patch 138-139 reserved for pkcs11
 
 Patch157:bind-9.11-fips-tests.patch
 Patch164:bind-9.11-rh1666814.patch
-Patch170:bind-9.11-feature-test-named.patch
-Patch171:bind-9.11-tests-variants.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/5987
-Patch172:bind-9.16-CVE-2022-0396.patch
-Patch173:bind-9.16-CVE-2021-25220.patch
-Patch174:bind-9.16-CVE-2021-25220-test.patch
-Patch175:bind-9.16-CVE-2022-3080.patch
-Patch176:bind-9.16-CVE-2022-38177.patch
-Patch177:bind-9.16-CVE-2022-38178.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/6793
-# https://gitlab.isc.org/isc-projects/bind9/commit/bf2ea6d8525bfd96a84dad221ba9e004adb710a8
-Patch178:bind-9.16-CVE-2022-2795.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/6695
-Patch179:bind-9.16-rh2101712.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/7376
-Patch181:bind-9.16-rh2133889.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/82185f4f80d2fa39a4569f6740cb360ffff8f5c4
-Patch182: bind-9.16-CVE-2022-3094-1.patch
-Patch183: bind-9.16-CVE-2022-3094-2.patch
-Patch184: bind-9.16-CVE-2022-3094-3.patch
-Patch185: bind-9.16-CVE-2022-3094-test.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/ea79385990c564eb478c286c089ea7ed15520690
-Patch186: bind-9.16-CVE-2022-3736.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/b4a65aaea19762a3712932aa2270e8a833fbde22
-Patch187: bind-9.16-CVE-2022-3924.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/f1d9e9ee3859976f403914d20ad2a10855343702
-Patch188: bind-9.16-CVE-2023-2828.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/dd7dde5743715dc0dec2defbb92b1a8637977bf9
-Patch189: bind-9.16-CVE-2023-2911-1.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/0101e28f91fb36b6a16a0049d3b3e2b7846f23f0
-Patch190: bind-9.16-CVE-2023-2911-2.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/c003c5bc3c68f3e513654b6689e1f60280d14844
-Patch191: bind-9.16-CVE-2023-2911-3.patch
-Patch192: bind-9.16-CVE-2023-3341.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/8924adca613ca9daea63786563cce6fdbd742c56
-Patch193: bind-9.16-update-b.root-servers.net.patch
-Patch194: bind-9.16-CVE-2023-4408.patch
-Patch195: bind-9.16-CVE-2023-5517.patch
-Patch196: bind-9.16-CVE-2023-5679.patch
-Patch197: bind-9.16-CVE-2023-6516.patch
-Patch198: bind-9.16-CVE-2023-50387.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/f493a8394102b0aeb101d5dc2f963004c8741175
-Patch199: bind-9.16-CVE-2023-4408-test1.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/b9c10a194da3358204f5ba7d91e55332db435614
-Patch200: bind-9.16-CVE-2023-4408-test2.patch
-# Downstream only change, fixes patch 171
-Patch201: bind-9.16-system-test-cds.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/32779aba8a0a5f852c611f44ecbeab5aab633e34
-Patch202: bind-9.16-isc-mempool-attach.patch
-# Downstream only change, complements patch 198
-Patch203: bind-9.16-isc_hp-CVE-2023-50387.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/1237d73cd1120b146ee699bbae7b2fe837cf2f98
-Patch204: bind-9.16-CVE-2023-6516-test.patch
-Patch205: bind-9.16-isc_hp-additional.patch
+# Downstream, make error only warning
+Patch165: bind-9.16-RH-inline-signing.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/26c9da5f2857b72077c17e06ac79f068c63782cc
 # https://gitlab.isc.org/isc-projects/bind9/commit/c5ebda6deb0997dc520b26fa0639891459de5cb6
 # https://gitlab.isc.org/isc-projects/bind9/commit/d56d2a32b861e81c2aaaabd309c4c58b629ede32
@@ -174,8 +123,6 @@ Patch211: bind-9.16-CVE-2024-1737-records-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/3f1826f2f78792e95f56da7af3a35c46b4d6d9af
 Patch212: bind-9.16-CVE-2024-1737-types.patch
 Patch213: bind-9.16-CVE-2024-1737-types-test.patch
-# backport issue fix
-Patch214: bind-9.16-CVE-2024-1737-records-test2.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
 Patch215: bind-9.18-CVE-2024-11187-pre-test.patch
 Patch216: bind-9.18-CVE-2024-11187.patch
@@ -199,51 +146,53 @@ Patch224: bind-9.16-CVE-2025-40780.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/50479358efdf432d690415131b74b5df158a9d69
 # https://gitlab.isc.org/isc-projects/bind9/commit/33a7db1fe964e55b76b4ac003ecc56cc67028bd9
 Patch225: bind-9.16-CVE-2025-40778.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/7942
-Patch226: bind-9.16-properly-process-extra-nameserver-lines.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11329
+Patch227: bind-9.20-robust-key-rollovers.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/6057
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/6068
+Patch228: bind-9.18-fix-dig-hanging-issue.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/a5e8d2354385d4f42a58113b16960d85ec306b09
-Patch227: bind-9.16-CVE-2026-1519.patch
+Patch229: bind-9.16-CVE-2026-1519.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/7f04d7104304fdc6b858c41bb44ad151b2c3e1b7
 Patch230: bind-9.16-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/ec2c98181115bd5f6c7087fcc74d816490d4312e
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/e5abd37cb2330af1fbfeba68eb32f2873390226d
 Patch231: bind-9.16-CVE-2026-5946.patch
+# downstream only. Do not conflict on upgrade, egg-info should be a file
+Patch232: bind-9.16-python-isc-distutils.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/10767
+Patch233: bind-9.20-stale-cname.patch
+Patch234: bind-9.20-stale-cname-tests.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/9236
+Patch235: bind-9.18-fix-qmin-test.patch
+# Downstream only. RHEL-213998.
+Patch236: bind-9.16-remove-openssl-api-level-check-for-engine.patch
 # https://github.com/isc-projects/bind9/commit/8572cb15c037111a407b6b9f61bf23e0892f053d
-Patch232: bind-9.16-CVE-2026-11622.patch
+Patch237: bind-9.16-CVE-2026-11622.patch
 # https://github.com/isc-projects/bind9/commit/5f1d1f35d8ea137ee3afefbe50d76a9fb1199ab7
 # https://github.com/isc-projects/bind9/commit/71dadba745c5d2ca7e1d4788fccab3a7d6a929f2
-Patch233: bind-9.16-CVE-2026-11721.patch
+Patch238: bind-9.16-CVE-2026-11721.patch
 # https://github.com/isc-projects/bind9/commit/1b90fbb4f9d3d923516ff7841171269b993cfd6f
-Patch234: bind-9.16-CVE-2026-13204.patch
+Patch239: bind-9.16-CVE-2026-13204.patch
 # https://github.com/isc-projects/bind9/commit/ee2ac186bc5f75f7f3f7049f1a21e9a2014cee59
-Patch235: bind-9.16-CVE-2026-11331.patch
+Patch240: bind-9.16-CVE-2026-11331.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/af84538a2ce6722b89b8ef7f2a233a5c10d0207d
-Patch236: bind-9.16-CVE-2026-13321.patch
+Patch241: bind-9.16-CVE-2026-13321.patch
 # https://github.com/isc-projects/bind9/commit/238ec379e9bed56383ba2333e711e554b139ac13
-Patch237: bind-9.16-CVE-2026-10723.patch
+Patch242: bind-9.16-CVE-2026-10723.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/379ca10cf34759d0c007cebcd9280911161bca1a
+Patch243: bind-9.16-CVE-2026-5950.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/42fb4c1b7d7381ec8019f9f668d8ee2157b408a3
+Patch244: bind-9.16-CVE-2026-3592.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/1c6cfd7c6860dbe80114b3df148b69f7f8e75f59
-Patch238: bind-9.16-CVE-2026-19666.patch
-Patch239: bind-9.16-CVE-2026-19666-test.patch
+Patch245: bind-9.16-CVE-2026-19666.patch
+Patch246: bind-9.16-CVE-2026-19666-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/fad1c3dc0730f0458fed22b732861f612de0f776
-Patch241: bind-9.16-CVE-2026-80274.patch
-Patch242: bind-9.16-CVE-2026-80274-test.patch
+Patch247: bind-9.16-CVE-2026-80274.patch
+Patch248: bind-9.16-CVE-2026-80274-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/9a5493e6c9daef33577391ff60bdaf6ae5409f34
-Patch243: bind-9.16-CVE-2026-19667.patch
-Patch244: bind-9.16-CVE-2026-19667-test.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/742dc803a85e7a7b9949010db550351275831aa6
-Patch245: bind-9.16-no-header-prev-in-expire-lru-headers.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/216f81c29a426eaf4469df63f90cf12a43f702f6
-Patch246: bind-9.16-CVE-2026-19662.patch
-Patch247: bind-9.16-CVE-2026-19662-test.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/51f96b82afca3528efb7a983e44d410063ea0977
-Patch248: bind-9.16-CVE-2026-94300.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/9911e9216622e6cffa1f3fdcc4448bb5b50208e7
-# Test ommited due to missing pytest harness and tests in this version of bind.
-Patch249: bind-9.16-CVE-2026-97313.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/0ecf627be4cb31b5d050f22e4f9b100aadc54eea
-Patch250: bind-9.16-CVE-2026-96888.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/54c2d9b9b07ffb763bdb5af8e675911873f49a1d
-Patch251: bind-9.16-CVE-2026-19630.patch
+Patch249: bind-9.16-CVE-2026-19667.patch
+Patch250: bind-9.16-CVE-2026-19667-test.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -540,18 +489,16 @@ in HTML and PDF format.
 %autosetup -N
 
 # Common patches
-%autopatch -p1 -m 1 -M 134
-# PKCS11 patches 135 136 and 149 are applied later.
-%autopatch -p1 -m 150
+%autopatch -p1 -m 0 -M 134
+%autopatch -p1 -m 140
 
 %if %{with PKCS11}
-%autopatch -p1 135
+%autopatch -p1 -m 135 -M 135
 cp -r bin/named{,-pkcs11}
 cp -r bin/dnssec{,-pkcs11}
 cp -r lib/dns{,-pkcs11}
 cp -r lib/ns{,-pkcs11}
-%autopatch -p1 136
-%autopatch -p1 149
+%autopatch -p1 -m 136 -M 139
 %endif
 
 # Sparc and s390 arches need to use -fPIE
@@ -703,14 +650,6 @@ popd # build
 
 %unit_prepare_build build
 %systemtest_prepare_build build
-
-# Fixes dst_test. Outside check block so that
-# Run-internal-BIND-test-suite actually creates the symlink
-# before running `make unit` separately.
-ln -rs {.,build}/lib/dns/tests/comparekeys
-
-# Skip broken netmgr_test. (Not broken on 9.16.50.)
-sed -e '/netmgr_test/ d' -i build/lib/isc/tests/Kyuafile
 
 %check
 %if %{with PKCS11} && (%{with UNITTEST} || %{with SYSTEMTEST})
@@ -1314,60 +1253,70 @@ fi;
 %endif
 
 %changelog
-* Wed Oct 21 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.13
-- Fix CVE-2026-94300: Arbitrary code execution via GSS-TSIG UDP message replay. 
-- Fix CVE-2026-97313: Denial of Service via assertion failure in RPZ query processing.
-- Fix CVE-2026-96888: Denial of Service via assertion failure during redirect processing.
-- Fix CVE-2026-19630: Denial of Service via unbounded processing of crafted DNS messages.
-
-* Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.12
-- Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
-
-* Wed Oct 07 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-40.11
-- Backport 'Do not use header_prev in expire_lru_headers' from upstream. (RHEL-276913)
-
-* Thu Sep 24 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.10
+* Thu Sep 24 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.50-11
 - Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
 - Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
 - Reject oversized negative cached records early (CVE-2026-19667)
 
-* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.9
-- Add new root key 38696 into package files (RHEL-255763)
+* Mon Sep 07 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.50-10
+- Rebuild to become part of regular release
+
+* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.50-9
+- Add new root key 38696 into package files (RHEL-131890)
 - Update built-in anchors in delv and named
 
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.8
+* Fri Aug 14 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-8
+- Fix amplification vulnerability via self-pointed glue records (CVE-2026-3592)
+
+* Fri Aug 14 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-7
+- Fix unbounded resend loop in resolver (CVE-2026-5950)
+
+* Fri Aug 14 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-6
 - Fix NSEC3 signer validation (CVE-2026-10723)
-
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.7
-- Fix CVE-2026-13321: reject out-of-zone NSEC next owner names
-
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.6
+- Fix reject out-of-zone NSEC next owner names (CVE-2026-13321)
 - Fix RPZ name-too-long wildcard expansion (CVE-2026-11331)
-
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.5
-- Fix dns_rdataset_addnoqname() accepting unsigned NSEC/NSEC3
-  (CVE-2026-13204)
-
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.4
+- Fix dns_rdataset_addnoqname() accepting unsigned NSEC/NSEC3 (CVE-2026-13204)
 - Fix dnssec-signzone and RRSIG wildcard validation (CVE-2026-11721)
+- Prevent cache memory exhaustion under sustained attack (CVE-2026-11622)
 
-* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.16.23-40.3
-- Prevent cache memory exhaustion under sustained attack
-  (CVE-2026-11622, RHEL-213397)
+* Thu Jul 23 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-5
+- Remove compile-time OpenSSL API version check that was preventing
+  bind from fetching the engine for RSA algorithms. (RHEL-213788)
 
-* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.2
+* Mon Jul 20 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-4
+- Fix uninitialized boolean in dig/host downstream patch that was
+  leading to incorrectly canceled queries in certain scenarios. (RHEL-212648)
+
+* Tue Jul 7 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.50-3
+- Added CNAME chain bugfixes from v9.18.
+- Fixed masterformat, reclimit, resolver, and qmin tests.
+
+* Tue Jul 7 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.50-2
+- Use the distutils for python, for backward compatibility
+
+* Tue Jul 7 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.50-1
+- Update to 9.16.50 (RHEL-6454)
+- Allow starting without inline-signing and dnssec-policy
+
+* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-44
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
 
-* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40.1
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-43
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
+
+* Thu Feb 12 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-42
+- Backport fix of dig/nslookup hanging issue (RHEL-29712) 
+
+* Thu Jan 29 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-41
+- Backport fix for manual DNSSEC key rollovers. (RHEL-12487)
 
 * Wed Jan 28 2026 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-40
 - Add forgotten _libdir/named into bind-chroot tmpfiles (RHEL-135629)
 
 * Thu Jan 22 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.16.23-39
-- Backport fix for nameserver line processing. (RHEL-79714) 
+- Backport fix for nameserver line processing. (RHEL-79714)
 
 * Fri Dec 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.16.23-38
 - Add sysusers named user creation (RHEL-132053)
