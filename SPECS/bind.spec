@@ -80,7 +80,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # Before rebasing bind, ensure bind-dyndb-ldap is ready to be rebuild and use side-tag with it.
 # Updating just bind will cause freeipa-dns-server package to be uninstallable.
 Version:  9.18.33
-Release:  15%{?dist}.14
+Release:  29%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -157,59 +157,55 @@ Patch225: bind-9.18-CVE-2025-40780.patch
 Patch226: bind-9.20-CVE-2025-8677-dual-signing.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11195
 Patch227: bind-9.20-CVE-2025-8677-dual-signing-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11329
+Patch228: bind-9.20-robust-key-rollovers.patch
+Patch229: bind-9.20-robust-key-rollovers-tests.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/10767
+Patch230: bind-9.20-stale-cname.patch
+Patch231: bind-9.20-stale-cname-tests.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/5ef459eeaa92222ad28d2186f5eae9a586dece70
-Patch228: bind-9.18-CVE-2026-1519.patch
-Patch229: bind-9.18-CVE-2026-1519-test.patch
+Patch232: bind-9.18-CVE-2026-1519.patch
+Patch233: bind-9.18-CVE-2026-1519-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/03ce21cf3099bd461f95ac1f4f22cce80ae1ba65
-Patch230: bind-9.18-CVE-2026-3039.patch
+Patch234: bind-9.18-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/7ce6ce37b1b04af0953ed2d3211587465085600e
-Patch231: bind-9.18-CVE-2026-5946.patch
+Patch235: bind-9.18-CVE-2026-5946.patch
 # https://github.com/isc-projects/bind9/commit/48f5aa5fb3746d6194edcc57e8792a8b3cc3b454
-Patch233: bind-9.18-CVE-2026-13204.patch
+Patch236: bind-9.18-CVE-2026-13204.patch
 # https://github.com/isc-projects/bind9/commit/dc328a199f96222e0c30cc20b7b795bfc2c9b2e4
-Patch234: bind-9.18-CVE-2026-11331.patch
+Patch237: bind-9.18-CVE-2026-11331.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/15089066b15f826d7487c3d160b5872820f84b83
-Patch235: bind-9.18-CVE-2026-11721.patch
+Patch238: bind-9.18-CVE-2026-11721.patch
 # https://github.com/isc-projects/bind9/commit/231b1ca3edfb26389e1af39181aa6b4413e87ec4
-Patch236: bind-9.18-CVE-2026-11622.patch
+Patch239: bind-9.18-CVE-2026-11622.patch
 # https://github.com/isc-projects/bind9/commit/36f3d50f9c8ebc8d25ee033e707ca502e20b083f
-Patch238: bind-9.18-CVE-2026-13321.patch
+Patch240: bind-9.18-CVE-2026-13321.patch
 # https://github.com/isc-projects/bind9/commit/c9cb6a5e24e43489cf3fd4d4cc2193b6a74499cb
-Patch239: bind-9.18-CVE-2026-10723.patch
+Patch241: bind-9.18-CVE-2026-10723.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/adc8285d23e2eac6ec463f5dbc5a9596fdd36c60
 # https://gitlab.isc.org/isc-projects/bind9/commit/095b11f20f911f5b8059bdc349b256d6c64ece30
-Patch240: bind-9.18-CVE-2026-11331-test.patch
+Patch242: bind-9.18-CVE-2026-11331-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/19e496ca260b6a756ae1378e8ebcbdb666b7d9ed
-Patch241: bind-9.18-CVE-2026-11721-test.patch
+Patch243: bind-9.18-CVE-2026-11721-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/1a4986e2533f87e80eb21da3f06708d335aff1e2
-Patch242: bind-9.18-CVE-2026-11721-fix2.patch
+Patch244: bind-9.18-CVE-2026-11721-fix2.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/43d173797e3c781c7e38d879c3c765f01cc09c59
+Patch245: bind-9.18-CVE-2026-5950.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/695362e3438c832ed0e39e144a77f233113d3431
+# https://gitlab.isc.org/isc-projects/bind9/commit/e25eaf9e6e09bbdd826252226144570222d542d8
+Patch246: bind-9.18-CVE-2026-3592.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/78175f9749fecdac4eb0d4b08dd064968b4c55f8
-Patch243: bind-9.18-CVE-2026-19666.patch
-Patch244: bind-9.18-CVE-2026-19666-test.patch
+Patch247: bind-9.18-CVE-2026-19666.patch
+Patch248: bind-9.18-CVE-2026-19666-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/2c06dd156f2338bb873d7ae775a7e2fca37d0bc9
-Patch245: bind-9.18-CVE-2026-81563.patch
+Patch249: bind-9.18-CVE-2026-81563.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/2c72008b25c916d75dd4df34550954feb75a1ccd
-Patch246: bind-9.18-CVE-2026-80274.patch
+Patch250: bind-9.18-CVE-2026-80274.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/c4203fb70e3985452afddeadb7075aa91ae05d7d
-Patch247: bind-9.18-CVE-2026-19667.patch
-Patch248: bind-9.18-CVE-2026-19667-test.patch
+Patch251: bind-9.18-CVE-2026-19667.patch
+Patch252: bind-9.18-CVE-2026-19667-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/17177ec18a4a62b7c67a6d76b3e8efb94886caa6
-Patch249: bind-9.18-CVE-2026-81736.patch
-# https://gitlab.isc.org/isc-projects/bind9/-/commit/794b0dff3cda4d0f4bcb05d07a134def3f75ab90
-Patch250: bind-9.18-CVE-2026-19662.patch
-Patch251: bind-9.18-CVE-2026-19662-test.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/8f32d7b27caf2c0f7ba2b4ae656e124f975025e6
-Patch252: bind-9.18-CVE-2026-94300.patch
-# downstream python testfix
-Patch253: bind-9.18-d-CVE-2026-94300-testfix.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/7be9e88b8ea5d405ae531fa59a48a24f83331875
-# downstream modification of test case
-Patch254: bind-9.18-CVE-2026-97313.patch
-Patch255: bind-9.18-CVE-2026-97313-test.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/5b4a28852868a0c1f24bc7e934a314df55478da7
-Patch256: bind-9.18-CVE-2026-96888.patch
-# https://gitlab.isc.org/isc-projects/bind9/commit/a1a3e57ed785cc9268b9269bc51b5b553028032f
-Patch257: bind-9.18-CVE-2026-19630.patch
+Patch253: bind-9.18-CVE-2026-81736.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1013,55 +1009,56 @@ fi;
 %endif
 
 %changelog
-* Thu Oct 22 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.14
-- Prevent arbitrary code execution via GSS-TSIG UDP message replay
-  (CVE-2026-94300)
-- Fix Denial of service via assertion failure in RPZ query processing (CVE-2026-97313)
-- Prevent Denial of Service via assertion failure during redirect processing
-  (CVE-2026-96888)
-- Prevent Denial of Service via unbounded processing of crafted DNS messages
-  (CVE-2026-19630)
-
-* Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.18.33-15.13
-- Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
-
-* Thu Sep 17 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.12
+* Thu Sep 17 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-29
 - Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
 - Prevent memory leak on following HTTPS/SVCB RR (CVE-2026-81563)
 - Prevent crash on wildcard responses containing both NSEC and NSEC3 proofs (CVE-2026-80274)
 - Reject oversized negative cached records early (CVE-2026-19667)
 - Set limit to following HTTPS/SVCB aliases (CVE-2026-81736)
 
-* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.11
-- Add new root key 38696 into package files too (RHEL-252999)
+* Mon Sep 07 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-28
+- Rebuild to become part of regular release
 
-* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.10
+* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-27
+- Add new root key 38696 into package files too (RHEL-77714)
+
+* Wed Aug 19 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-26
+- Avoid unbounded recursion loop (CVE-2026-5950)
+- Limit overlapping addresses resolver usage (CVE-2026-3592)
+
+* Mon Jul 27 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-25
 - Validate NSEC3 signer matches owning zone (CVE-2026-10723)
 
-* Fri Jul 24 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.9
+* Fri Jul 24 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-24
 - Reject out-of-zone NSEC next owner names (CVE-2026-13321)
 
-* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.7
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-23
 - Fix reference-counted dns_slabheaders in cache (CVE-2026-11622)
 
-* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.6
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-22
 - Fix RRSIG label count validation for wildcard cache poisoning
   (CVE-2026-11721)
 
-* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.5
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-21
 - Fix RPZ name-too-long wildcard expansion (CVE-2026-11331)
 
-* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-15.4
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.33-20
 - Fix assertion failure on malformed NSEC/NSEC3 responses
   (CVE-2026-13204)
 
-* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.2
+* Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-19
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
 
-* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15.1
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-18
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
+
+* Thu Feb 26 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.18.33-17
+- Backport fixes for stale CNAME chains. (RHEL-142289)
+
+* Wed Jan 28 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.18.33-16
+- Backport fix for manual DNSSEC key rolllovers. (RHEL-144421)
 
 * Wed Jan 28 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.33-15
 - Add forgotten _libdir/named into bind-chroot tmpfiles (RHEL-132053)
